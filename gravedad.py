@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from math import *
 from vectores import *
+from funciones_extra import *
 import time
 import random
 import colorsys
@@ -115,12 +116,14 @@ class Puntos:
         plt.show()
 
 # -------------------- funcion para pedir datos de planetas --------------------------
-def pedir_dato(nombre_del_dato, close = "exit", tipo_de_dato = 1): # los tipos de datos van 0 = int; 1 = float; 2 = vector; 3 = string
-    dato = input(f'{nombre_del_dato} = ')
+def pedir_dato(nombre_del_dato, tipo_de_dato, close = "exit"): # los tipos de datos van 0 = int; 1 = float; 2 = vector; 3 = string
+    dato = input(f'\x1b[1;32m {nombre_del_dato} = \x1b[0;37m')
     
+    if dato == close:
+        return False
     if tipo_de_dato == 3:
         return dato
-    elif dato.isnumeric():
+    elif es_numero(dato):
         if tipo_de_dato == 0:
             return int(dato)
         elif tipo_de_dato == 1:
@@ -128,30 +131,32 @@ def pedir_dato(nombre_del_dato, close = "exit", tipo_de_dato = 1): # los tipos d
     elif tipo_de_dato == 2:
         vector = dato.split(";")
         if len(vector) == 2:
-            if vector[0].isnumeric() and vector[1].isnumeric():
+            if es_numero(vector[0]) and es_numero(vector[1]):
                 return Vector2(float(vector[0]),float(vector[1]))
-        
-    elif dato == close:
-        return False
     
-    print("dato invalido")
-    pedir_dato(nombre_del_dato, close = close, tipo_de_dato=tipo_de_dato)
+    print("\x1b[1;31mdato invalido\x1b[0;37m")
+    a = close
+    b = tipo_de_dato
+    c = nombre_del_dato
+    return pedir_dato(c, close=a, tipo_de_dato=b)
 
-def pedir_datos_del_planeta():
+def crear_planeta():
     nombre = pedir_dato("Nombre", tipo_de_dato=3)
-    if nombre != False:
+    if nombre != False and nombre != None:
             
         masa = pedir_dato("Masa", tipo_de_dato=1)
-        if masa != False:
-                
-            posicion = pedir_dato("posicion", tipo_de_dato=2)
-            if posicion != False:
-                    
-                velocidad = pedir_dato("velocidad", tipo_de_dato=2)
-                if velocidad != False:
+        if masa != False and masa != None:
+            if masa > 0:
+                posicion = pedir_dato("posicion", tipo_de_dato=2)
+                if posicion != False and posicion != None:
                         
-                    cuerpo_creado = Cuerpo("nombre", posicion, velocidad, masa)
-                    todos_los_cuerpos.append(cuerpo_creado)
+                    velocidad = pedir_dato("velocidad", tipo_de_dato=2)
+                    if velocidad != False and velocidad != None:
+                        print(f"se creo el cuerpo {nombre}, masa = {masa}, posicion = {posicion}, velocidad = {velocidad}")
+                        cuerpo_creado = Cuerpo("nombre", posicion, velocidad, masa)
+                        todos_los_cuerpos.append(cuerpo_creado)
+            else:
+                print("\x1b[1;31merror de input (no se puede tener una masa negativa)\x1b[0;37m")
 
 # Constante de gravitacion universal
 g = 0.01
@@ -160,6 +165,7 @@ g = 0.01
 todos_los_cuerpos = list()
 
 sigue = True
+# ----------- bucle de personalizacion del usuario -----------------------
 while sigue:
     input_del_usuario = input('>>> ')
     input_separado = input_del_usuario.split(" ")
@@ -167,22 +173,32 @@ while sigue:
     if input_del_usuario == "run":
         sigue = False
         break
+    elif input_del_usuario == "help":
+        print("""\x1b[1;33madd:\x1b[0;37m añadir un planeta
+\x1b[1;33mG:\x1b[0;37m constante de gravitacion universal
+    ? muestra su valor actual
+    = igualar a (valor siguiente a \"=\")
+\x1b[1;33mrun:\x1b[0;37m empezar simulacion""")
     elif input_separado[0] == "add":
-        pedir_datos_del_planeta()
+        crear_planeta()
+        print("\n")
     elif input_separado[0] == "G":
         if len(input_separado) == 1:
             print("""Seleccione que quiere hacer con la variable G
-            \"=\" para asignar un valor
-            \"?\" para ver el valor actual""")
+    \"=\" para asignar un valor
+    \"?\" para ver el valor actual""")
+            print("\n")
         elif input_separado[1] == "?":
             print(g)
         elif input_separado[1] == "=" and len(input_separado) == 3:
-            if input_separado[2].isnumeric():
+            if es_numero(input_separado[2]):
                 g = float(input_separado[2])
             else:
-                print("error de input")
+                print("\x1b[1;31merror de input\x1b[0;37m")
         else:
-            print("error de input")
+            print("\x1b[1;31merror de input\x1b[0;37m")
+    else:
+        print(f'\x1b[1;31m\"{input_del_usuario}\" no es un comando valido. Para ayuda escriba: help\x1b[0;37m')
 
 # Uso de la clase para tener la ventana
 puntos = Puntos()
