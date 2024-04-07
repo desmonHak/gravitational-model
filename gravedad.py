@@ -227,7 +227,9 @@ while sigue:
     ? muestra su valor actual
     = igualar a (valor siguiente a \"=\")
 \x1b[1;33mrun:\x1b[0;37m empezar simulacion
-\x1b[1;33mcuerpos:\x1b[0;37m datos de los cuerpos""")
+\x1b[1;33mcuerpos:\x1b[0;37m datos de los cuerpos
+\x1b[1;33mload:\x1b[0;37m cargar un archivo: load [nombre del archivo]
+\x1b[1;33msave:\x1b[0;37m guardar datos de los cuerpos: save [nombre del archivo]""")
         
     # ~~~~~~~~~~~~~~~~~~~~ si dice "add" ~~~~~~~~~~~~~~~~~~~~
     elif input_separado[0] == "add":
