@@ -8,6 +8,8 @@ from funciones_extra import *
 import time
 import random
 import colorsys
+import json
+import os
 
 # ---------------------- Crear la clase Cuerpo ----------------------------
 class Cuerpo:
@@ -316,7 +318,35 @@ while sigue:
         else:
             # indicar un error de sintaxis
             print_error(tipos_de_errores[1])
-        
+    
+    # ~~~~~~~~~~~~~~~~~~~~ is dice "load" ~~~~~~~~~~~~~~~~~~~~ 
+    elif input_separado[0] == "load":
+        if len(input_separado) == 2:
+            if os.path.exists(input_separado[1]):
+                objetos_agregados = []
+                with open(input_separado[1], 'r') as archivo:
+                    DCLD = json.load(archivo)
+                for dato in DCLD["cuerpos"]:
+                    n_posicion = Vector2(dato["posicion"]["x"], dato["posicion"]["y"])
+                    n_velocidad = Vector2(dato["velocidad"]["x"], dato["velocidad"]["y"])
+                    cuerpo_cargado = Cuerpo(dato["nombre"],n_posicion,n_velocidad,dato["masa"])
+                    todos_los_cuerpos.append(cuerpo_cargado)
+                    objetos_agregados.append(cuerpo_cargado)
+                    print(f"\x1b[1;33mSe añadio {cuerpo_cargado.nombre} (tag: {cuerpo_cargado.tag})\x1b[0;37m")
+                print(f"se añadieron {len(objetos_agregados)} cuerpos")
+            else:
+                print_error(tipos_de_errores[3], "el archivo dado no existe")
+        else:
+            print_error(tipos_de_errores[1])
+
+    elif input_separado[0] == "save":
+        if len(input_separado) == 2:
+            datos = crear_archivo_json(todos_los_cuerpos)
+            with open(input_separado[1], 'w') as archivo:
+                json.dump(datos, archivo, indent=4)
+        else:
+            print_error(tipos_de_errores[1])
+    
     else:
         # indicar un error al no ser un comando valido
         print_error(f"\"{input_del_usuario}\"", mensaje_extra="no es un comando valido. Para ayuda escriba: help")
