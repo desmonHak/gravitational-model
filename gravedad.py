@@ -115,48 +115,85 @@ class Puntos:
     def iniciar_animacion(self):
         plt.show()
 
-# -------------------- funcion para pedir datos de planetas --------------------------
+# -------------------- funcion para pedir datos --------------------------
 def pedir_dato(nombre_del_dato, tipo_de_dato, close = "exit"): # los tipos de datos van 0 = int; 1 = float; 2 = vector; 3 = string
+    # pedir dato inicial
     dato = input(f'\x1b[1;32m {nombre_del_dato} = \x1b[0;37m')
     
+    # si el dato es igual a el comando de salida
     if dato == close:
+        # retornar falso
         return False
-    if tipo_de_dato == 3:
+    
+    if tipo_de_dato == 3: # si el tipo de dato es una string
+        # retornar el dato sin modificar
         return dato
-    elif es_numero(dato):
-        if tipo_de_dato == 0:
+    
+    elif es_numero(dato): # si el dato otorgado por el usuario es un numero
+        
+        if tipo_de_dato == 0: # si el tipo de dato pedido es int
+            # retornar el int del dato
             return int(dato)
-        elif tipo_de_dato == 1:
+        
+        elif tipo_de_dato == 1: # si el tipo de dato pedido es float
+            # retornar el float del dato
             return float(dato)
-    elif tipo_de_dato == 2:
-        vector = dato.split(";")
-        if len(vector) == 2:
-            if es_numero(vector[0]) and es_numero(vector[1]):
+    
+    elif tipo_de_dato == 2: # si el tipo de dato pedido era un vector 2 
+        # separar el input por el ;
+        vector = dato.split(";") 
+        
+        if len(vector) == 2: # si la cantidad de datos es 2
+            if es_numero(vector[0]) and es_numero(vector[1]): # si ambos datos son numeros
+                # retornar el vector 2
                 return Vector2(float(vector[0]),float(vector[1]))
     
-    print("\x1b[1;31mdato invalido\x1b[0;37m")
+    # --- en caso de que nada de eso pase
+    # indicar al usuario que el dato no es valido
+    print_error(tipos_de_errores[0], mensaje_extra="El tipo de dato otorgado no es valido en este contexto")
+    
+    # volver a pedir los datos
     a = close
     b = tipo_de_dato
     c = nombre_del_dato
     return pedir_dato(c, close=a, tipo_de_dato=b)
 
-def crear_planeta():
+# ------------ funcion para crear un cuerpo ----------------------------------------
+def crear_cuerpo():
+    # pedir el nombre
     nombre = pedir_dato("Nombre", tipo_de_dato=3)
-    if nombre != False and nombre != None:
-            
+
+    if nombre != False and nombre != None: # si el dato tiene un valor
+        
+        # pedir la masa
         masa = pedir_dato("Masa", tipo_de_dato=1)
-        if masa != False and masa != None:
-            if masa > 0:
+        
+        if masa != False and masa != None: # si el dato tiene un valor
+            
+            if masa > 0: # si la masa es mayor a 0
+                
+                # perdir la posicion 
                 posicion = pedir_dato("posicion", tipo_de_dato=2)
-                if posicion != False and posicion != None:
-                        
+                
+                if posicion != False and posicion != None: # si el dato tiene un valor
+                    
+                    # pedir la velocidad
                     velocidad = pedir_dato("velocidad", tipo_de_dato=2)
-                    if velocidad != False and velocidad != None:
+                    
+                    if velocidad != False and velocidad != None: # si el dato tiene un valor
+                        
+                        # indicar que se creo el cuerpo
                         print(f"se creo el cuerpo {nombre}, masa = {masa}, posicion = {posicion}, velocidad = {velocidad}")
+                        
+                        # crear cuerpo
                         cuerpo_creado = Cuerpo("nombre", posicion, velocidad, masa)
+                        
+                        # añadir el cuerpo a la variable que contiene a todos
                         todos_los_cuerpos.append(cuerpo_creado)
-            else:
-                print("\x1b[1;31merror de input (no se puede tener una masa negativa)\x1b[0;37m")
+            else: # si la masa es menor a 0
+                # indicar el error
+                print_error(tipos_de_errores[2], mensaje_extra="no se puede tener una masa negativa")
+                # print("\x1b[1;31merror de input (no se puede tener una masa negativa)\x1b[0;37m")
 
 # Constante de gravitacion universal
 g = 0.01
@@ -174,13 +211,13 @@ while sigue:
         sigue = False
         break
     elif input_del_usuario == "help":
-        print("""\x1b[1;33madd:\x1b[0;37m añadir un planeta
+        print("""\x1b[1;33madd:\x1b[0;37m añadir un cuerpo
 \x1b[1;33mG:\x1b[0;37m constante de gravitacion universal
     ? muestra su valor actual
     = igualar a (valor siguiente a \"=\")
 \x1b[1;33mrun:\x1b[0;37m empezar simulacion""")
     elif input_separado[0] == "add":
-        crear_planeta()
+        crear_cuerpo()
         print("\n")
     elif input_separado[0] == "G":
         if len(input_separado) == 1:
@@ -194,11 +231,12 @@ while sigue:
             if es_numero(input_separado[2]):
                 g = float(input_separado[2])
             else:
-                print("\x1b[1;31merror de input\x1b[0;37m")
+                print_error(tipos_de_errores[0])
         else:
-            print("\x1b[1;31merror de input\x1b[0;37m")
+            print_error(tipos_de_errores[1])
     else:
-        print(f'\x1b[1;31m\"{input_del_usuario}\" no es un comando valido. Para ayuda escriba: help\x1b[0;37m')
+        print_error(f"\"{input_del_usuario}\"", mensaje_extra="no es un comando valido. Para ayuda escriba: help")
+
 
 # Uso de la clase para tener la ventana
 puntos = Puntos()
