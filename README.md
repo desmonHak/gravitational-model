@@ -15,6 +15,8 @@ En este programa puedes hacer simulaciones de gravedad en 2 dimensiones.
 
 4. run: empezar simulacion
 
+5. cuerpos: datos de los cuerpos
+
 Para asignación de vectores 2 se escribe x;y separando los valores con un punto y coma
 
 ej: 5;8 indica la posición 5 en X, 8 en Y

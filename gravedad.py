@@ -206,63 +206,119 @@ todos_los_cuerpos = list()
 sigue = True
 # ----------- bucle de personalizacion del usuario -----------------------
 while sigue:
+    # pedir input al usuario
     input_del_usuario = input('>>> ')
+    # separar el input por palabras
     input_separado = input_del_usuario.split(" ")
     
+    # ~~~~~~~~~~~~~~~~~~~~ si dice "run" ~~~~~~~~~~~~~~~~~~~~
     if input_del_usuario == "run":
+        # se finaliza el bucle
         sigue = False
         break
+    
+    # ~~~~~~~~~~~~~~~~~~~~ si dice "help" ~~~~~~~~~~~~~~~~~~~~
     elif input_del_usuario == "help":
+        # dar la informacion
         print("""\x1b[1;33madd:\x1b[0;37m añadir un cuerpo
 \x1b[1;33mG:\x1b[0;37m constante de gravitacion universal
     ? muestra su valor actual
     = igualar a (valor siguiente a \"=\")
 \x1b[1;33mrun:\x1b[0;37m empezar simulacion
-\x1b[1;33mdata.cuerpos:\x1b[0;37m mostrar todos los cuerpos exitentes""")
+\x1b[1;33mcuerpos:\x1b[0;37m datos de los cuerpos""")
+        
+    # ~~~~~~~~~~~~~~~~~~~~ si dice "add" ~~~~~~~~~~~~~~~~~~~~
     elif input_separado[0] == "add":
+        # crear un cuerpo
         crear_cuerpo()
+        # dejar un espacio
         print("\n")
+    
+    # ~~~~~~~~~~~~~~~~~~~~ si dice "G" ~~~~~~~~~~~~~~~~~~~~
     elif input_separado[0] == "G":
+        # -- si tiene 1 palabra --
         if len(input_separado) == 1:
+            
+            # dar instrucciones de uso
             print("""Seleccione que quiere hacer con la variable G
     \"=\" para asignar un valor
     \"?\" para ver el valor actual""")
+            
+            # dejar un espacio
             print("\n")
+        
+        # -- si la segunda palabra es "?" --
         elif input_separado[1] == "?":
+            # Dar el valor de g
             print(g)
+        
+        # -- si la segunda palabra es "=" y tiene 3 palabras
         elif input_separado[1] == "=" and len(input_separado) == 3:
+            
+            # si la tercera palabra es un numero
             if es_numero(input_separado[2]):
+                # cambiar el valor de g
                 g = float(input_separado[2])
+                print(f"\x1b[1;33mNuevo valor de G. Ahora es: {g}\x1b[0;37m")
             else:
+                # dar un error de tipo de dato
                 print_error(tipos_de_errores[0])
         else:
+            # dar un error de sintaxis
             print_error(tipos_de_errores[1])
+    
+    # ~~~~~~~~~~~~~~~~~~~~ si dice "cuerpos" ~~~~~~~~~~~~~~~~~~~~ 
     elif input_separado[0] == "cuerpos":
+        # -- si solo tiene una palabra -- 
         if len(input_separado) == 1:
+            # dar instrucciones de uso
             print("""Seleccione que quiere hacer con "cuerpos"
     \"see\" para ver todos los cuerpos actuales
     \"delete\" para ver el valor actual \"cuerpos delete [tag]\"""")
+        
+        # -- la segunda palabra es "see" --
         elif input_separado[1] == "see":
+            
+            # si tiene cuerpos
             if (len(todos_los_cuerpos) > 0):
+                # iterar los cuerpos
                 for i in todos_los_cuerpos:
+                    # mostrar datos
                     print(f"\x1b[1;33m{i.tag}:\x1b[0;37m nombre: {i.nombre}, masa = {i.masa}, posicion = {i.posicion}, velocidad = {i.velocidad}")
+            
             else:
+                
+                # indicar que no hay datos
                 print("todavía no hay ningun cuerpo")
+        
+        # -- si la segunda palabra es "delete" --
         elif input_separado[1] == "delete":
+            # si tiene tres palabras
             if len(input_separado) == 3:
+                # recorre todos los cuerpos
                 for i in todos_los_cuerpos:
+                    # si la tag es igual a la dada por el usuario
                     if i.tag == input_separado[2]:
+                        # indicar que se elimino el cuerpo
                         print(f"\x1b[1;33mSe elimino {i.nombre} (tag: {i.tag})\x1b[0;37m")
+                        # quitar el cuerpo de la lista
                         todos_los_cuerpos.remove(i)
+                        # terminar bucle for
                         break
+                
+                # si no se encuentra
                 else:
+                    # indicar un error de input al no existir el cuerpo indicado
                     print_error(tipos_de_errores[3], f"no existe ningun cuerpo con la tag \"{input_separado[2]}\"")
             else:
+                # indicar un error de sintaxis
                 print_error(tipos_de_errores[1])
         else:
+            # indicar un error de sintaxis
             print_error(tipos_de_errores[1])
         
     else:
+        # indicar un error al no ser un comando valido
         print_error(f"\"{input_del_usuario}\"", mensaje_extra="no es un comando valido. Para ayuda escriba: help")
 
 
