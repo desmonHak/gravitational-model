@@ -17,6 +17,8 @@ class Cuerpo:
         self.posicion = posicion
         self.velocidad = velocidad
         self.masa = masa
+        # establecer una tag aleatoria
+        self.tag = crear_string_random(5)
         # establecer un color aleatorio
         self.color = colorsys.hsv_to_rgb(random.uniform(0,1),1,1)
     
@@ -186,8 +188,8 @@ def crear_cuerpo():
                         print(f"se creo el cuerpo {nombre}, masa = {masa}, posicion = {posicion}, velocidad = {velocidad}")
                         
                         # crear cuerpo
-                        cuerpo_creado = Cuerpo("nombre", posicion, velocidad, masa)
-                        
+                        cuerpo_creado = Cuerpo(nombre, posicion, velocidad, masa)
+                        print(cuerpo_creado.tag)
                         # añadir el cuerpo a la variable que contiene a todos
                         todos_los_cuerpos.append(cuerpo_creado)
             else: # si la masa es menor a 0
@@ -215,7 +217,8 @@ while sigue:
 \x1b[1;33mG:\x1b[0;37m constante de gravitacion universal
     ? muestra su valor actual
     = igualar a (valor siguiente a \"=\")
-\x1b[1;33mrun:\x1b[0;37m empezar simulacion""")
+\x1b[1;33mrun:\x1b[0;37m empezar simulacion
+\x1b[1;33mdata.cuerpos:\x1b[0;37m mostrar todos los cuerpos exitentes""")
     elif input_separado[0] == "add":
         crear_cuerpo()
         print("\n")
@@ -234,6 +237,31 @@ while sigue:
                 print_error(tipos_de_errores[0])
         else:
             print_error(tipos_de_errores[1])
+    elif input_separado[0] == "cuerpos":
+        if len(input_separado) == 1:
+            print("""Seleccione que quiere hacer con "cuerpos"
+    \"see\" para ver todos los cuerpos actuales
+    \"delete\" para ver el valor actual \"cuerpos delete [tag]\"""")
+        elif input_separado[1] == "see":
+            if (len(todos_los_cuerpos) > 0):
+                for i in todos_los_cuerpos:
+                    print(f"\x1b[1;33m{i.tag}:\x1b[0;37m nombre: {i.nombre}, masa = {i.masa}, posicion = {i.posicion}, velocidad = {i.velocidad}")
+            else:
+                print("todavía no hay ningun cuerpo")
+        elif input_separado[1] == "delete":
+            if len(input_separado) == 3:
+                for i in todos_los_cuerpos:
+                    if i.tag == input_separado[2]:
+                        print(f"\x1b[1;33mSe elimino {i.nombre} (tag: {i.tag})\x1b[0;37m")
+                        todos_los_cuerpos.remove(i)
+                        break
+                else:
+                    print_error(tipos_de_errores[3], f"no existe ningun cuerpo con la tag \"{input_separado[2]}\"")
+            else:
+                print_error(tipos_de_errores[1])
+        else:
+            print_error(tipos_de_errores[1])
+        
     else:
         print_error(f"\"{input_del_usuario}\"", mensaje_extra="no es un comando valido. Para ayuda escriba: help")
 
