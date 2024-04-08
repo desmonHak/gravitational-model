@@ -162,10 +162,10 @@ def pedir_dato(nombre_del_dato, tipo_de_dato, close = "exit"): # los tipos de da
     print_error(tipos_de_errores[0], mensaje_extra="El tipo de dato otorgado no es valido en este contexto")
     
     # volver a pedir los datos
-    a = close
-    b = tipo_de_dato
-    c = nombre_del_dato
-    return pedir_dato(c, close=a, tipo_de_dato=b)
+    close_this = close
+    tipo_de_dato_this = tipo_de_dato
+    nombre_del_dato_this = nombre_del_dato
+    return pedir_dato(nombre_del_dato_this, close=close_this, tipo_de_dato=tipo_de_dato_this)
 
 # ------------ funcion para crear un cuerpo ----------------------------------------
 def crear_cuerpo():
@@ -344,7 +344,8 @@ while sigue:
                 
                 if (DCLD["G"] != g):
                     g = DCLD["G"]
-                    print()
+                    print(f"{c["verde"]}Se actualizo el valor de G{c["default"]}")
+                    print(f"{c["verde"]}Nuevo valor de G es: {g}{c["default"]}")
                 
             else:
                 print_error(tipos_de_errores[3], "el archivo dado no existe")
