@@ -10,6 +10,11 @@ import random
 import colorsys
 import json
 import os
+import ctypes
+
+# habilitar el soporte de colores ANSI en la consola de Windows
+kernel32 = ctypes.windll.kernel32
+kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
 
 # ---------------------- Crear la clase Cuerpo ----------------------------
 class Cuerpo:
@@ -122,7 +127,7 @@ class Puntos:
 # -------------------- funcion para pedir datos --------------------------
 def pedir_dato(nombre_del_dato, tipo_de_dato, close = "exit"): # los tipos de datos van 0 = int; 1 = float; 2 = vector; 3 = string
     # pedir dato inicial
-    dato = input(f'\x1b[1;32m {nombre_del_dato} = \x1b[0;37m')
+    dato = input(f'{c["verde"]} {nombre_del_dato} = {c["default"]}')
     
     # si el dato es igual a el comando de salida
     if dato == close:
@@ -197,7 +202,7 @@ def crear_cuerpo():
             else: # si la masa es menor a 0
                 # indicar el error
                 print_error(tipos_de_errores[2], mensaje_extra="no se puede tener una masa negativa")
-                # print("\x1b[1;31merror de input (no se puede tener una masa negativa)\x1b[0;37m")
+                # print("\x1b[1;31merror de input (no se puede tener una masa negativa){c["default"]}")
 
 # Constante de gravitacion universal
 g = 0.01
@@ -222,14 +227,14 @@ while sigue:
     # ~~~~~~~~~~~~~~~~~~~~ si dice "help" ~~~~~~~~~~~~~~~~~~~~
     elif input_del_usuario == "help":
         # dar la informacion
-        print("""\x1b[1;33madd:\x1b[0;37m añadir un cuerpo
-\x1b[1;33mG:\x1b[0;37m constante de gravitacion universal
+        print(f"""{c["amarillo"]}add:{c["default"]} añadir un cuerpo
+{c["amarillo"]}G:{c["default"]} constante de gravitacion universal
     ? muestra su valor actual
     = igualar a (valor siguiente a \"=\")
-\x1b[1;33mrun:\x1b[0;37m empezar simulacion
-\x1b[1;33mcuerpos:\x1b[0;37m datos de los cuerpos
-\x1b[1;33mload:\x1b[0;37m cargar un archivo: load [nombre del archivo]
-\x1b[1;33msave:\x1b[0;37m guardar datos de los cuerpos: save [nombre del archivo]""")
+{c["amarillo"]}run:{c["default"]} empezar simulacion
+{c["amarillo"]}cuerpos:{c["default"]} datos de los cuerpos
+{c["amarillo"]}load:{c["default"]} cargar un archivo: load [nombre del archivo]
+{c["amarillo"]}save:{c["default"]} guardar datos de los cuerpos: save [nombre del archivo]""")
         
     # ~~~~~~~~~~~~~~~~~~~~ si dice "add" ~~~~~~~~~~~~~~~~~~~~
     elif input_separado[0] == "add":
@@ -263,7 +268,7 @@ while sigue:
             if es_numero(input_separado[2]):
                 # cambiar el valor de g
                 g = float(input_separado[2])
-                print(f"\x1b[1;33mNuevo valor de G. Ahora es: {g}\x1b[0;37m")
+                print(f"{c["amarillo"]}Nuevo valor de G. Ahora es: {g}{c["default"]}")
             else:
                 # dar un error de tipo de dato
                 print_error(tipos_de_errores[0])
@@ -288,7 +293,7 @@ while sigue:
                 # iterar los cuerpos
                 for i in todos_los_cuerpos:
                     # mostrar datos
-                    print(f"\x1b[1;33m{i.tag}:\x1b[0;37m nombre: {i.nombre}, masa = {i.masa}, posicion = {i.posicion}, velocidad = {i.velocidad}")
+                    print(f"{c["amarillo"]}{i.tag}:{c["default"]} nombre: {i.nombre}, masa = {i.masa}, posicion = {i.posicion}, velocidad = {i.velocidad}")
             
             else:
                 
@@ -304,7 +309,7 @@ while sigue:
                     # si la tag es igual a la dada por el usuario
                     if i.tag == input_separado[2]:
                         # indicar que se elimino el cuerpo
-                        print(f"\x1b[1;33mSe elimino {i.nombre} (tag: {i.tag})\x1b[0;37m")
+                        print(f"{c["amarillo"]}Se elimino {i.nombre} (tag: {i.tag}){c["default"]}")
                         # quitar el cuerpo de la lista
                         todos_los_cuerpos.remove(i)
                         # terminar bucle for
@@ -334,8 +339,13 @@ while sigue:
                     cuerpo_cargado = Cuerpo(dato["nombre"],n_posicion,n_velocidad,dato["masa"])
                     todos_los_cuerpos.append(cuerpo_cargado)
                     objetos_agregados.append(cuerpo_cargado)
-                    print(f"\x1b[1;33mSe añadio {cuerpo_cargado.nombre} (tag: {cuerpo_cargado.tag})\x1b[0;37m")
+                    print(f"{c["amarillo"]}Se añadio {cuerpo_cargado.nombre} (tag: {cuerpo_cargado.tag}){c["default"]}")
                 print(f"se añadieron {len(objetos_agregados)} cuerpos")
+                
+                if (DCLD["G"] != g):
+                    g = DCLD["G"]
+                    print()
+                
             else:
                 print_error(tipos_de_errores[3], "el archivo dado no existe")
         else:
@@ -343,7 +353,7 @@ while sigue:
 
     elif input_separado[0] == "save":
         if len(input_separado) == 2:
-            datos = crear_archivo_json(todos_los_cuerpos)
+            datos = crear_archivo_json(todos_los_cuerpos, g)
             with open(input_separado[1], 'w') as archivo:
                 json.dump(datos, archivo, indent=4)
         else:

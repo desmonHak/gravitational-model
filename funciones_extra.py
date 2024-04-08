@@ -10,6 +10,18 @@ tipos_de_errores = [
     "Error de input" # 3
 ]
 
+c = {
+    'negro': '\x1b[1;30m',
+    'rojo': '\x1b[1;31m',
+    'verde': '\x1b[1;32m',
+    'amarillo': '\x1b[1;33m',
+    'azul': '\x1b[1;34m',
+    'morado': '\x1b[1;35m',
+    'cian': '\x1b[1;36m',
+    'blanco': '\x1b[1;37m',
+    'default': '\x1b[0;37m',
+}
+
 letras_numeros = "abcdefghijklmnopqrstuvwxyz0123456789"
 
 def crear_string_random(largo):
@@ -28,11 +40,11 @@ def es_numero(cadena):
 
 def print_error(tipo_de_error, mensaje_extra = ""):
     if mensaje_extra != "":
-        print(f"\x1b[1;31m{tipo_de_error}: {mensaje_extra}\x1b[0;37m")
+        print(f"{c["rojo"]}{tipo_de_error}: {mensaje_extra}{c["default"]}")
     else:
-        print(f"\x1b[1;31m{tipo_de_error}\x1b[0;37m")
+        print(f"{c["rojo"]}{tipo_de_error}{c["default"]}")
 
-def crear_archivo_json(lista_de_cuerpos):
+def crear_archivo_json(lista_de_cuerpos, gravitacion_universal):
     cuerpos = []
     
     for item in lista_de_cuerpos:
@@ -51,6 +63,7 @@ def crear_archivo_json(lista_de_cuerpos):
         cuerpos.append(diccionario_para_un_cuerpo)
     
     archivo = {
-        "cuerpos": cuerpos
+        "cuerpos": cuerpos,
+        "G": gravitacion_universal
     }
     return archivo
