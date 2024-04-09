@@ -39,7 +39,7 @@ class Cuerpo:
     # funcion para aplicar la gravedad
     def aplicar_gravedad(self, otro, delta_time):
         # calcular la fuerza usando la formula de newton
-        fuerza_total = g*((self.masa * otro.masa) / distancia(self.posicion, otro.posicion))
+        fuerza_total = g*((self.masa * otro.masa) / (distancia(self.posicion, otro.posicion) ** 2))
         
         # calcular el vector de la direccion usando trigonometria
         ang = atan2(self.posicion.y - otro.posicion.y, self.posicion.x - otro.posicion.x)
