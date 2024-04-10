@@ -207,6 +207,11 @@ def crear_cuerpo():
 # Constante de gravitacion universal
 g = 0.01
 
+# Modo de tiempo
+time_mode = True # si es True se usa delta_time si es False es constante 
+# valor de delta_time si el time_mode es false
+uniform_time = 0.1
+
 # ------------ crear cuerpos -------------------------
 todos_los_cuerpos = list()
 
@@ -360,6 +365,27 @@ while sigue:
         else:
             print_error(tipos_de_errores[1])
     
+    elif input_separado[0] == "time.mode":
+        if len(input_separado) == 2:
+            if input_separado[1] == "delta_time":
+                time_mode = True
+            else:
+                print_error(tipos_de_errores[1])
+        elif len(input_separado) == 3:
+            if input_separado[1] == "uniform":
+                if es_numero(input_separado[2]) :
+                    if float(input_separado[2]) > 0:
+                        time_mode = False
+                        uniform_time = float(input_separado[2])
+                    else:
+                        print_error(tipos_de_errores[0], "el tiempo tiene que ser mayor a 0")
+                else:
+                    print_error(tipos_de_errores[0], "el tiempo tiene que ser un valor float mayor a 0")
+            else:
+                print_error(tipos_de_errores[1])
+        else:
+            print_error(tipos_de_errores[1])
+    
     else:
         # indicar un error al no ser un comando valido
         print_error(f"\"{input_del_usuario}\"", mensaje_extra="no es un comando valido. Para ayuda escriba: help")
@@ -376,14 +402,18 @@ last_time = time.perf_counter()
 # ---------------- empezando el bucle infinito ---------------------------
 while True:
     
-    # ~~~~~~~~~~~~~~~~~~~ calcular el delta time ~~~~~~~~~~~~~~~~~~~~
-    # guardar el tiempo actual
-    current_time = time.perf_counter()
-    
-    # crear el delta time (tiempo que tarda en hacer un frame)
-    # haciendo la diferencia entre el tiempo actual y el del frame anterior
-    delta_time = current_time - last_time
-    
+    # verificar el modo de tiempo que se esta usando
+    if time_mode == True:
+        # ~~~~~~~~~~~~~~~~~~~ calcular el delta time ~~~~~~~~~~~~~~~~~~~~
+        # guardar el tiempo actual
+        current_time = time.perf_counter()
+        
+        # crear el delta time (tiempo que tarda en hacer un frame)
+        # haciendo la diferencia entre el tiempo actual y el del frame anterior
+        delta_time = current_time - last_time
+    else:
+        # ~~~~~~~~~~~~~~~~~~~ usar un valor fijo ~~~~~~~~~~~~~~~~~~~~
+        delta_time = uniform_time
     
     # ~~~~~~~~~~~ aplicar la fuerza de gravedad entre cada objeto~con todos los demas ~~~~~~~~~~~~~~~~
     # iterar la lista de cuerpos
@@ -404,8 +434,9 @@ while True:
     # actualizar el grafico
     puntos.actualizar_grafico()
     
-    # imprimir cuanto tarda entre cada frame
-    print(delta_time)
-    
-    # guardar el tiempo actual (para el delta time del siguiente frame)
-    last_time = current_time
+    if time_mode == True:
+        # imprimir cuanto tarda entre cada frame
+        print(delta_time)
+        
+        # guardar el tiempo actual (para el delta time del siguiente frame)
+        last_time = current_time
