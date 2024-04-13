@@ -36,8 +36,8 @@ ej: 5;8 indica la posición 5 en X, 8 en Y
 - Si se busca precisión se recomeienda usar el time.mode en uniform ya que la velocidad de procesameniento no influye en la simulacion
 - se pude simular el sistema solar de la siguiente manera:
 ```
->>> load solar_sistem.json
->>> time.mode uniform 100000
+load solar_sistem.json
+time.mode uniform 100000
 ```
 
 el valor de time.mode uniform se puede cambiar para variar la velocidad
