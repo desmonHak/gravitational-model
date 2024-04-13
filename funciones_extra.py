@@ -3,6 +3,18 @@
 import json
 from random import *
 
+class cnfloat:
+    def __init__(self, numero, e):
+        self.n1 = numero
+        self.e = e
+
+    def __add__(self, otro):
+        pass
+    
+    def __str__(self):
+        return str(self.n1) + "e" + str(self.e)
+
+
 tipos_de_errores = [
     "Error de tipo de dato", # 0
     "Error de sintaxis", # 1

@@ -1,8 +1,13 @@
 import math
+from decimal import Decimal, getcontext
 
 def distancia(vect1, vect2):
     v = vect1 - vect2
     return math.sqrt(v.x ** 2 + v.y **2)
+
+def Decimal_distancia(vect1, vect2):
+    v = vect1 - vect2
+    return Decimal(math.sqrt(v.x ** 2 + v.y **2))
 
 def verificar_cercania(vect_comprovar, vect2, discrepancia):
     if float(vect_comprovar.x) - discrepancia <= float(vect2.x) and float(vect_comprovar.x) + discrepancia >= float(vect2.x):
@@ -19,16 +24,16 @@ class Vector2:
         self.y = y
     
     def __add__(self, otro_vector):
-        return Vector2(self.x + otro_vector.x, self.y + otro_vector.y)
+        return Vector2(Decimal(self.x) + Decimal(otro_vector.x), Decimal(self.y) + Decimal(otro_vector.y))
     
     def __mul__(self, escalar):
-        return Vector2(self.x * escalar, self.y * escalar)
+        return Vector2(self.x * Decimal(escalar), self.y * Decimal(escalar))
     
     def __truediv__(self, escalar):
-        return Vector2(self.x / escalar, self.y / escalar)
+        return Vector2(self.x / Decimal(escalar), self.y / Decimal(escalar))
     
     def __sub__(self, otro_vector):
-        return Vector2(float(self.x) - float(otro_vector.x), float(self.y) - float(otro_vector.y))
+        return Vector2(Decimal(self.x) - Decimal(otro_vector.x), Decimal(self.y) - Decimal(otro_vector.y))
     
     def __str__(self):
         return f"({self.x}, {self.y})" 

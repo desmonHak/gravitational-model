@@ -11,10 +11,14 @@ import colorsys
 import json
 import os
 import ctypes
+from decimal import Decimal, getcontext
 
 # habilitar el soporte de colores ANSI en la consola de Windows
 kernel32 = ctypes.windll.kernel32
 kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
+
+# precisión de los datos
+getcontext().prec = 250
 
 # ---------------------- Crear la clase Cuerpo ----------------------------
 class Cuerpo:
@@ -23,31 +27,31 @@ class Cuerpo:
         self.nombre = nombre
         self.posicion = posicion
         self.velocidad = velocidad
-        self.masa = masa
+        self.masa = Decimal(masa)
         # establecer una tag aleatoria
         self.tag = crear_string_random(5)
         # establecer un color aleatorio
         self.color = colorsys.hsv_to_rgb(random.uniform(0,1),1,1)
     
     # funcion para aplicar una fuerza
-    def aplicar_fuerza(self, fueza_aplicada):
+    def aplicar_fuerza(self, fueza_aplicada, tiempo):
         # aplicar la formula F = ma
-        velocidad_aplicable = fueza_aplicada / self.masa
+        aceleracion  = fueza_aplicada / self.masa
         # se suma la velocidad a la velocidad previa anterior
-        self.velocidad += velocidad_aplicable
+        self.velocidad = self.velocidad + aceleracion * tiempo
     
     # funcion para aplicar la gravedad
     def aplicar_gravedad(self, otro, delta_time):
         # calcular la fuerza usando la formula de newton
-        fuerza_total = g*((self.masa * otro.masa) / (distancia(self.posicion, otro.posicion) ** 2))
+        fuerza_total = g*((self.masa * otro.masa) / (Decimal_distancia(self.posicion, otro.posicion) ** 2))
         
         # calcular el vector de la direccion usando trigonometria
         ang = atan2(self.posicion.y - otro.posicion.y, self.posicion.x - otro.posicion.x)
-        fuerza_x = fuerza_total * cos(ang) * 180 / pi
-        fuerza_y = fuerza_total * sin(ang) * 180 / pi
+        fuerza_x = fuerza_total * Decimal(cos(ang))
+        fuerza_y = fuerza_total * Decimal(sin(ang))
         
         # aplicar la fuerza obtenida
-        self.aplicar_fuerza(Vector2(fuerza_x, fuerza_y) * delta_time * -1)
+        self.aplicar_fuerza(Vector2(fuerza_x, fuerza_y) * -1, delta_time)
     
     # funcion para calcular la posición del objeto en cada momento
     def constante(self, delta_time):
@@ -71,8 +75,8 @@ class Puntos:
         self.scatter = self.ax.scatter([], [])
         
         # establecer el tamaño que muestran los ejes
-        self.ax.set_xlim(-100, 150) # x
-        self.ax.set_ylim(-150, 150) # y
+        self.ax.set_xlim(-100 * (10 ** 10.5), 150 * (10 ** 10.5)) # x
+        self.ax.set_ylim(-150 * (10 ** 10.5), 150 * (10 ** 10.5)) # y
         
         # establecer el color de fondo del grafico a negro
         self.ax.set_facecolor('black')
@@ -110,8 +114,9 @@ class Puntos:
 
     # funcion para actualizar el grafico
     def actualizar_grafico(self):
+        masa = 10
         # establecer las variables que se van a usar en el grafico
-        xs, ys, masas, colores = zip(*[(i.posicion.x, i.posicion.y, i.masa, i.color) for i in self.cuerpos])
+        xs, ys, masas, colores = zip(*[(i.posicion.x, i.posicion.y, masa, i.color) for i in self.cuerpos])
         # actualizar las posiciones
         self.scatter.set_offsets(list(zip(xs, ys)))
         # actualizar las masas
@@ -125,7 +130,7 @@ class Puntos:
         plt.show()
 
 # -------------------- funcion para pedir datos --------------------------
-def pedir_dato(nombre_del_dato, tipo_de_dato, close = "exit"): # los tipos de datos van 0 = int; 1 = float; 2 = vector; 3 = string
+def pedir_dato(nombre_del_dato, tipo_de_dato, close = "exit"): # los tipos de datos van 0 = int; 1 = float; 2 = vector; 3 = string; 4 = Decimal; 5 = vector Decimal
     # pedir dato inicial
     dato = input(f'{c["verde"]} {nombre_del_dato} = {c["default"]}')
     
@@ -147,6 +152,10 @@ def pedir_dato(nombre_del_dato, tipo_de_dato, close = "exit"): # los tipos de da
         elif tipo_de_dato == 1: # si el tipo de dato pedido es float
             # retornar el float del dato
             return float(dato)
+        
+        elif tipo_de_dato == 4: # si el tipo de dato pedido es decimal
+            # retornar el decimal del dato
+            return Decimal(dato)
     
     elif tipo_de_dato == 2: # si el tipo de dato pedido era un vector 2 
         # separar el input por el ;
@@ -156,6 +165,15 @@ def pedir_dato(nombre_del_dato, tipo_de_dato, close = "exit"): # los tipos de da
             if es_numero(vector[0]) and es_numero(vector[1]): # si ambos datos son numeros
                 # retornar el vector 2
                 return Vector2(float(vector[0]),float(vector[1]))
+    
+    elif tipo_de_dato == 5: # si el tipo de dato pedido era un vector 2 
+        # separar el input por el ;
+        vector = dato.split(";") 
+        
+        if len(vector) == 2: # si la cantidad de datos es 2
+            if es_numero(vector[0]) and es_numero(vector[1]): # si ambos datos son numeros
+                # retornar el vector 2
+                return Vector2(Decimal(vector[0]),Decimal(vector[1]))
     
     # --- en caso de que nada de eso pase
     # indicar al usuario que el dato no es valido
@@ -175,7 +193,7 @@ def crear_cuerpo():
     if nombre != False and nombre != None: # si el dato tiene un valor
         
         # pedir la masa
-        masa = pedir_dato("Masa", tipo_de_dato=1)
+        masa = pedir_dato("Masa", tipo_de_dato=4)
         
         if masa != False and masa != None: # si el dato tiene un valor
             
@@ -205,7 +223,7 @@ def crear_cuerpo():
                 # print("\x1b[1;31merror de input (no se puede tener una masa negativa){c["default"]}")
 
 # Constante de gravitacion universal
-g = 0.01
+g = Decimal('0.01')
 
 # Modo de tiempo
 time_mode = True # si es True se usa delta_time si es False es constante 
@@ -239,7 +257,12 @@ while sigue:
 {c["amarillo"]}run:{c["default"]} empezar simulacion
 {c["amarillo"]}cuerpos:{c["default"]} datos de los cuerpos
 {c["amarillo"]}load:{c["default"]} cargar un archivo: load [nombre del archivo]
-{c["amarillo"]}save:{c["default"]} guardar datos de los cuerpos: save [nombre del archivo]""")
+{c["amarillo"]}save:{c["default"]} guardar datos de los cuerpos: save [nombre del archivo]
+{c["amarillo"]}time.mode:{c["default"]} asignar el tipo de tiempo que se va a usar
+  - delta_time varia dependiendo de cuanto tarda entre frame y frame (automático)
+  - uniform un valor constante cada frame
+  
+  mas informacion en https://github.com/pianistandcats/gravitational-model""")
         
     # ~~~~~~~~~~~~~~~~~~~~ si dice "add" ~~~~~~~~~~~~~~~~~~~~
     elif input_separado[0] == "add":
@@ -272,7 +295,7 @@ while sigue:
             # si la tercera palabra es un numero
             if es_numero(input_separado[2]):
                 # cambiar el valor de g
-                g = float(input_separado[2])
+                g = Decimal(input_separado[2])
                 print(f"{c["amarillo"]}Nuevo valor de G. Ahora es: {g}{c["default"]}")
             else:
                 # dar un error de tipo de dato
@@ -331,24 +354,41 @@ while sigue:
             # indicar un error de sintaxis
             print_error(tipos_de_errores[1])
     
-    # ~~~~~~~~~~~~~~~~~~~~ is dice "load" ~~~~~~~~~~~~~~~~~~~~ 
+    # ~~~~~~~~~~~~~~~~~~~~ si dice "load" ~~~~~~~~~~~~~~~~~~~~ 
     elif input_separado[0] == "load":
+        # -- comprobar que sean 2 palabras --
         if len(input_separado) == 2:
+            # comprobar que el archivo exista
             if os.path.exists(input_separado[1]):
+                # crear una lista para ir agregando los cuerpos del archivo 
                 objetos_agregados = []
+                # cargar el archivo
                 with open(input_separado[1], 'r') as archivo:
+                    # guardar los datos en un diccionario
                     DCLD = json.load(archivo)
+                
+                # iterar los cuerpos
                 for dato in DCLD["cuerpos"]:
-                    n_posicion = Vector2(dato["posicion"]["x"], dato["posicion"]["y"])
-                    n_velocidad = Vector2(dato["velocidad"]["x"], dato["velocidad"]["y"])
-                    cuerpo_cargado = Cuerpo(dato["nombre"],n_posicion,n_velocidad,dato["masa"])
+                    # guardar los datos de la posicion 
+                    n_posicion = Vector2(Decimal(dato["posicion"]["x"]), Decimal(dato["posicion"]["y"]))
+                    # guardar los datos de la velocidad
+                    n_velocidad = Vector2(Decimal(dato["velocidad"]["x"]), Decimal(dato["velocidad"]["y"]))
+                    # crear el cuerpo usando el nombre, la posicon, la velocidad y la masa que indica el archivo
+                    cuerpo_cargado = Cuerpo(dato["nombre"],n_posicion,n_velocidad,Decimal(dato["masa"]))
+                    
+                    # se agrega el cuerpo a las listas que contienen los cuerpos
                     todos_los_cuerpos.append(cuerpo_cargado)
                     objetos_agregados.append(cuerpo_cargado)
+                    
+                    # mostrar el cuerpo que se añadio
                     print(f"{c["amarillo"]}Se añadio {cuerpo_cargado.nombre} (tag: {cuerpo_cargado.tag}){c["default"]}")
+                
+                # mostrar el numero de cuerpos que se añadieron
                 print(f"se añadieron {len(objetos_agregados)} cuerpos")
                 
+                # si el valor de G es diferente al del archivo
                 if (DCLD["G"] != g):
-                    g = DCLD["G"]
+                    g = Decimal(DCLD["G"])
                     print(f"{c["verde"]}Se actualizo el valor de G{c["default"]}")
                     print(f"{c["verde"]}Nuevo valor de G es: {g}{c["default"]}")
                 
@@ -357,24 +397,40 @@ while sigue:
         else:
             print_error(tipos_de_errores[1])
 
+    # ~~~~~~~~~~~~~~~~~~~~ si dice "save" ~~~~~~~~~~~~~~~~~~~~ 
     elif input_separado[0] == "save":
+        # -- si la cantidad de palabras es igual a 2 --
         if len(input_separado) == 2:
+            # se crea la variable con los datos
             datos = crear_archivo_json(todos_los_cuerpos, g)
+            # se crea el archivo
             with open(input_separado[1], 'w') as archivo:
+                # se añaden los datos
                 json.dump(datos, archivo, indent=4)
         else:
             print_error(tipos_de_errores[1])
     
+    # ~~~~~~~~~~~~~~~~~~~~ si dice "time.mode" ~~~~~~~~~~~~~~~~~~~~ 
     elif input_separado[0] == "time.mode":
+        # -- si la cantidad de palabras son 2 --
         if len(input_separado) == 2:
+            # si la segunda palabra es delta_time
             if input_separado[1] == "delta_time":
+                # se activa el modo delta_time
                 time_mode = True
             else:
+                # dar un error de sintaxis
                 print_error(tipos_de_errores[1])
+        
+        # -- si tiene 3 palabras
         elif len(input_separado) == 3:
+            # si la segunda palabra es uniform 
             if input_separado[1] == "uniform":
+                # si la 3 palabra es un numero
                 if es_numero(input_separado[2]) :
+                    # si la 3 palabra es mayor a 0
                     if float(input_separado[2]) > 0:
+                        # se activa el modo uniform
                         time_mode = False
                         uniform_time = float(input_separado[2])
                     else:
@@ -399,9 +455,12 @@ puntos.agregar_cuerpos(todos_los_cuerpos)
 # variable para el delta time
 last_time = time.perf_counter()
 
+tiempo_inicial = time.perf_counter()
+tiempo_transcurrido = 0 
+
 # ---------------- empezando el bucle infinito ---------------------------
 while True:
-    
+    # print("iniciar")
     # verificar el modo de tiempo que se esta usando
     if time_mode == True:
         # ~~~~~~~~~~~~~~~~~~~ calcular el delta time ~~~~~~~~~~~~~~~~~~~~
@@ -416,6 +475,7 @@ while True:
         delta_time = uniform_time
     
     # ~~~~~~~~~~~ aplicar la fuerza de gravedad entre cada objeto~con todos los demas ~~~~~~~~~~~~~~~~
+    # print("aplicar la gravedad a todos los objetos con todos los otros objetos")
     # iterar la lista de cuerpos
     for objeto in todos_los_cuerpos:
         # iterar de nuevo la lista de cuerpos
@@ -426,17 +486,22 @@ while True:
                 objeto.aplicar_gravedad(otros_objetos, delta_time)
     
     # ~~~~~~~~~~~~~~~ calcular la inercia de cada objeto ~~~~~~~~~~~~~~~~~~~~~~
+    # print("aplicar constantes")
     # iterar la lista de todos los cuerpos
     for i in todos_los_cuerpos:
         # realizar su funcion constante
         i.constante(delta_time)
+        
+    tiempo_transcurrido += delta_time
     
     # actualizar el grafico
     puntos.actualizar_grafico()
-    
     if time_mode == True:
         # imprimir cuanto tarda entre cada frame
         print(delta_time)
         
         # guardar el tiempo actual (para el delta time del siguiente frame)
         last_time = current_time
+    
+    # indicar la cantidad de dias
+    print(str(tiempo_transcurrido /60/60/24) + " dias")
