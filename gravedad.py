@@ -504,6 +504,7 @@ while sigue:
         # indicar un error al no ser un comando valido
         print_error(f"\"{input_del_usuario}\"", mensaje_extra="no es un comando valido. Para ayuda escriba: help")
 
+# <- colocar funciones de generacion de cuerpos aqui
 
 # Uso de la clase para tener la ventana
 puntos = Puntos()
@@ -535,15 +536,12 @@ while True:
     # ~~~~~~~~~~~ aplicar la fuerza de gravedad entre cada objeto~con todos los demas ~~~~~~~~~~~~~~~~
     # print("aplicar la gravedad a todos los objetos con todos los otros objetos")
     # iterar la lista de cuerpos
-    for objeto in todos_los_cuerpos:
-        # iterar de nuevo la lista de cuerpos
-        for otros_objetos in todos_los_cuerpos:
-            # si el otro objeto es distinto del objeto al que se le aplicara la fuerza
-            if otros_objetos != objeto:
-                # aplicar la gravedad entre estos objetos
-                objeto.aplicar_gravedad(otros_objetos, delta_time)
+    for i, objeto in enumerate(todos_los_cuerpos):
+        for otros_objetos in todos_los_cuerpos[i+1:]:
+            objeto.aplicar_gravedad(otros_objetos, delta_time)
+            otros_objetos.aplicar_gravedad(objeto, delta_time)
     
-    # ~~~~~~~~~~~~~~~ calcular la inercia de cada objeto ~~~~~~~~~~~~~~~~~~~~~~
+    # ~~~~~~~~~~~~~~~ calcular la inercia 9de cada objeto ~~~~~~~~~~~~~~~~~~~~~~
     # print("aplicar constantes")
     # iterar la lista de todos los cuerpos
     for i in todos_los_cuerpos:
