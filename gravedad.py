@@ -23,7 +23,7 @@ getcontext().prec = 250
 # ---------------------- Crear la clase Cuerpo ----------------------------
 class Cuerpo:
     # inicializar variables
-    def __init__(self, nombre, posicion, velocidad, masa):
+    def __init__(self, nombre, posicion, velocidad, masa, diam = None):
         self.nombre = nombre
         self.posicion = posicion
         self.velocidad = velocidad
@@ -32,6 +32,13 @@ class Cuerpo:
         self.tag = crear_string_random(5)
         # establecer un color aleatorio
         self.color = colorsys.hsv_to_rgb(random.uniform(0,1),1,1)
+        self.diametro = diam
+        
+
+        if diam != None:
+            self.diametro = diam
+        else:
+            self.diametro = float(masa) * dot_scale
     
     # funcion para aplicar una fuerza
     def aplicar_fuerza(self, fueza_aplicada, tiempo):
@@ -75,8 +82,8 @@ class Puntos:
         self.scatter = self.ax.scatter([], [])
         
         # establecer el tamaño que muestran los ejes
-        self.ax.set_xlim(-100 * (10 ** 10.5), 150 * (10 ** 10.5)) # x
-        self.ax.set_ylim(-150 * (10 ** 10.5), 150 * (10 ** 10.5)) # y
+        self.ax.set_xlim(view_scale.x * -1, view_scale.x) # x
+        self.ax.set_ylim(view_scale.y * -1, view_scale.y) # y
         
         # establecer el color de fondo del grafico a negro
         self.ax.set_facecolor('black')
@@ -114,15 +121,23 @@ class Puntos:
 
     # funcion para actualizar el grafico
     def actualizar_grafico(self):
-        masa = 10
         # establecer las variables que se van a usar en el grafico
-        xs, ys, masas, colores = zip(*[(i.posicion.x, i.posicion.y, masa, i.color) for i in self.cuerpos])
+        xs, ys, diametros, colores, nombres = zip(*[(i.posicion.x, i.posicion.y, i.diametro, i.color, i.nombre) for i in self.cuerpos])
         # actualizar las posiciones
         self.scatter.set_offsets(list(zip(xs, ys)))
-        # actualizar las masas
-        self.scatter.set_sizes(list(masas))
+        # actualizar las diametros
+        self.scatter.set_sizes(list(diametros))
         # actualizar el color
         self.scatter.set_color(list(colores))
+        
+        # Eliminar etiquetas anteriores
+        for annotation in self.ax.texts:
+            annotation.remove()
+        
+        # Mostrar etiquetas en blanco en cada punto
+        for x, y, nombre in zip(xs, ys, nombres):
+            self.ax.annotate(nombre, (x, y), ha='center', va='top', color='white', fontsize=8, xytext=(0, -10), textcoords='offset points')
+    
         # mostrar cambios
         self.fig.canvas.get_tk_widget().update()
         
@@ -130,7 +145,7 @@ class Puntos:
         plt.show()
 
 # -------------------- funcion para pedir datos --------------------------
-def pedir_dato(nombre_del_dato, tipo_de_dato, close = "exit"): # los tipos de datos van 0 = int; 1 = float; 2 = vector; 3 = string; 4 = Decimal; 5 = vector Decimal
+def pedir_dato(nombre_del_dato, tipo_de_dato, close = "exit", pass_command = False): # los tipos de datos van 0 = int; 1 = float; 2 = vector; 3 = string; 4 = Decimal; 5 = vector Decimal
     # pedir dato inicial
     dato = input(f'{c["verde"]} {nombre_del_dato} = {c["default"]}')
     
@@ -138,6 +153,9 @@ def pedir_dato(nombre_del_dato, tipo_de_dato, close = "exit"): # los tipos de da
     if dato == close:
         # retornar falso
         return False
+    elif pass_command != False:
+        if dato == pass_command:
+            return None
     
     if tipo_de_dato == 3: # si el tipo de dato es una string
         # retornar el dato sin modificar
@@ -174,6 +192,8 @@ def pedir_dato(nombre_del_dato, tipo_de_dato, close = "exit"): # los tipos de da
             if es_numero(vector[0]) and es_numero(vector[1]): # si ambos datos son numeros
                 # retornar el vector 2
                 return Vector2(Decimal(vector[0]),Decimal(vector[1]))
+
+    
     
     # --- en caso de que nada de eso pase
     # indicar al usuario que el dato no es valido
@@ -209,14 +229,16 @@ def crear_cuerpo():
                     
                     if velocidad != False and velocidad != None: # si el dato tiene un valor
                         
-                        # indicar que se creo el cuerpo
-                        print(f"se creo el cuerpo {nombre}, masa = {masa}, posicion = {posicion}, velocidad = {velocidad}")
-                        
-                        # crear cuerpo
-                        cuerpo_creado = Cuerpo(nombre, posicion, velocidad, masa)
-                        print(cuerpo_creado.tag)
-                        # añadir el cuerpo a la variable que contiene a todos
-                        todos_los_cuerpos.append(cuerpo_creado)
+                        diametro = pedir_dato("diametro", tipo_de_dato=1, pass_command="")
+                        if diametro != False: # si el dato tiene un valor
+                            # indicar que se creo el cuerpo
+                            print(f"se creo el cuerpo {nombre}, masa = {masa}, posicion = {posicion}, velocidad = {velocidad}")
+                            
+                            # crear cuerpo
+                            cuerpo_creado = Cuerpo(nombre, posicion, velocidad, masa, diam=diametro)
+                            print(cuerpo_creado.tag)
+                            # añadir el cuerpo a la variable que contiene a todos
+                            todos_los_cuerpos.append(cuerpo_creado)
             else: # si la masa es menor a 0
                 # indicar el error
                 print_error(tipos_de_errores[2], mensaje_extra="no se puede tener una masa negativa")
@@ -229,6 +251,12 @@ g = Decimal('0.01')
 time_mode = True # si es True se usa delta_time si es False es constante 
 # valor de delta_time si el time_mode es false
 uniform_time = 0.1
+
+# escala de los puntos
+dot_scale = 1
+
+# escala del campo de vision
+view_scale = Vector2(150,150)
 
 # ------------ crear cuerpos -------------------------
 todos_los_cuerpos = list()
@@ -261,6 +289,9 @@ while sigue:
 {c["amarillo"]}time.mode:{c["default"]} asignar el tipo de tiempo que se va a usar
   - delta_time varia dependiendo de cuanto tarda entre frame y frame (automático)
   - uniform un valor constante cada frame
+{c["amarillo"]}size:{c["default"]} valores de tamaños
+  - dots tamaño automático de los cuerpos
+  - view tamaño de visión
   
   mas informacion en https://github.com/pianistandcats/gravitational-model""")
         
@@ -374,7 +405,7 @@ while sigue:
                     # guardar los datos de la velocidad
                     n_velocidad = Vector2(Decimal(dato["velocidad"]["x"]), Decimal(dato["velocidad"]["y"]))
                     # crear el cuerpo usando el nombre, la posicon, la velocidad y la masa que indica el archivo
-                    cuerpo_cargado = Cuerpo(dato["nombre"],n_posicion,n_velocidad,Decimal(dato["masa"]))
+                    cuerpo_cargado = Cuerpo(dato["nombre"],n_posicion,n_velocidad,Decimal(dato["masa"]), float(dato["diametro"]))
                     
                     # se agrega el cuerpo a las listas que contienen los cuerpos
                     todos_los_cuerpos.append(cuerpo_cargado)
@@ -439,6 +470,33 @@ while sigue:
                     print_error(tipos_de_errores[0], "el tiempo tiene que ser un valor float mayor a 0")
             else:
                 print_error(tipos_de_errores[1])
+        else:
+            print_error(tipos_de_errores[1])
+    
+    # ~~~~~~~~~~~~~~~~~~~~ si dice "size" ~~~~~~~~~~~~~~~~~~~~
+    elif input_separado[0] == "size":
+        if len(input_separado) == 3:
+            if input_separado[1] == "dots":
+                if es_numero(input_separado[2]):
+                    dot_scale = float(input_separado[2])
+                    print(f"{c["amarillo"]}La nueva escala de los puntos. Ahora es: masa * {dot_scale}{c["default"]}")
+                else:
+                    print_error(tipos_de_errores[0])
+            if input_separado[1] == "view":
+                xy = input_separado[2].split(";")
+                if len(xy) == 2:
+                    if es_numero(xy[0]) and es_numero(xy[1]):
+                        if float(xy[0]) > 0 and float(xy[1]) > 0:
+                            view_scale = Vector2(float(xy[0]),float(xy[1]))
+                            print(f"{c["amarillo"]}La nueva escala de vision. Ahora es: {view_scale}{c["default"]}")
+                        else:
+                            print_error(tipos_de_errores[0])
+                    else:
+                        print_error(tipos_de_errores[0])
+                else:
+                    print_error(tipos_de_errores[1])
+            else:
+                print_error(tipos_de_errores[3], "")
         else:
             print_error(tipos_de_errores[1])
     

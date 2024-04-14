@@ -70,7 +70,9 @@ def crear_archivo_json(lista_de_cuerpos, gravitacion_universal):
                 "x": item.velocidad.x,
                 "y": item.velocidad.y
             },
-            "masa": item.masa
+            "masa": item.masa,
+            "diametro": item.diametro
+            
         }
         cuerpos.append(diccionario_para_un_cuerpo)
     

@@ -27,7 +27,7 @@ class Vector2:
         return Vector2(Decimal(self.x) + Decimal(otro_vector.x), Decimal(self.y) + Decimal(otro_vector.y))
     
     def __mul__(self, escalar):
-        return Vector2(self.x * Decimal(escalar), self.y * Decimal(escalar))
+        return Vector2(Decimal(self.x) * Decimal(escalar), Decimal(self.y) * Decimal(escalar))
     
     def __truediv__(self, escalar):
         return Vector2(self.x / Decimal(escalar), self.y / Decimal(escalar))
