@@ -37,6 +37,7 @@ ej: 5;8 indica la posición 5 en X, 8 en Y
 - se pude simular el sistema solar de la siguiente manera:
 ```
 load solar_sistem.json
+size view 100e11;100e11
 time.mode uniform 100000
 ```
 
