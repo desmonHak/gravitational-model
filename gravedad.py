@@ -1,6 +1,7 @@
 
 # ----------------- importar librerias --------------------- 
 import matplotlib.pyplot as plt
+
 from matplotlib.animation import FuncAnimation
 from math import *
 from vectores import *
@@ -57,13 +58,13 @@ class Cuerpo:
         fuerza_x = fuerza_total * Decimal(cos(ang))
         fuerza_y = fuerza_total * Decimal(sin(ang))
         
-        # calcular el vector de la direccion usando trigonometria para el otro
-        ang2 = atan2(otro.posicion.y - self.posicion.y, otro.posicion.x - self.posicion.x )
-        fuerza_x2 = fuerza_total * Decimal(cos(ang2))
-        fuerza_y2 = fuerza_total * Decimal(sin(ang2))
+        # # calcular el vector de la direccion usando trigonometria para el otro
+        # ang2 = atan2(otro.posicion.y - self.posicion.y, otro.posicion.x - self.posicion.x )
+        # fuerza_x2 = fuerza_total * Decimal(cos(ang2))
+        # fuerza_y2 = fuerza_total * Decimal(sin(ang2))
         
         # aplicar la fuerza obtenida
-        otro.aplicar_fuerza(Vector2(fuerza_x2, fuerza_y2) * -1, delta_time)
+        otro.aplicar_fuerza(Vector2(fuerza_x, fuerza_y), delta_time)
         
         # aplicar la fuerza obtenida
         self.aplicar_fuerza(Vector2(fuerza_x, fuerza_y) * -1, delta_time)
@@ -108,8 +109,6 @@ class Puntos:
         # activar el modo interactivo en el grafico
         plt.ion()
         
-        # iniciar la animacion
-        self.iniciar_animacion()
         # crear una animacion
         self.ani = FuncAnimation(self.fig, self.actualizar_grafico, interval=16.7 /2, frames=60)
 
@@ -121,13 +120,9 @@ class Puntos:
     # funcion para actualizar el grafico
     def actualizar_grafico(self):
         # establecer las variables que se van a usar en el grafico
-        xs, ys, diametros, colores, nombres = zip(*[(i.posicion.x, i.posicion.y, i.diametro, i.color, i.nombre) for i in self.cuerpos])
+        xs, ys, nombres = zip(*[(i.posicion.x, i.posicion.y, i.nombre) for i in self.cuerpos])
         # actualizar las posiciones
         self.scatter.set_offsets(list(zip(xs, ys)))
-        # actualizar las diametros
-        self.scatter.set_sizes(list(diametros))
-        # actualizar el color
-        self.scatter.set_color(list(colores))
         
         # Eliminar etiquetas anteriores
         for annotation in self.ax.texts:
@@ -142,6 +137,13 @@ class Puntos:
         
     def iniciar_animacion(self):
         plt.show()
+        
+        diametros, colores = zip(*[(i.diametro, i.color) for i in self.cuerpos])
+
+        # actualizar las diametros
+        self.scatter.set_sizes(list(diametros))
+        # actualizar el color
+        self.scatter.set_color(list(colores))
 
 # -------------------- funcion para pedir datos --------------------------
 def pedir_dato(nombre_del_dato, tipo_de_dato, close = "exit", pass_command = False): # los tipos de datos van 0 = int; 1 = float; 2 = vector; 3 = string; 4 = Decimal; 5 = vector Decimal
@@ -504,12 +506,21 @@ while sigue:
         print_error(f"\"{input_del_usuario}\"", mensaje_extra="no es un comando valido. Para ayuda escriba: help")
 
 # <- colocar funciones de generacion de cuerpos aqui
+for i in range(25):
+    n_posicion = Vector2(Decimal(random.uniform(-4558857000000, 4558857000000)),Decimal(random.uniform(-4558857000000, 4558857000000)))
+    n_velocidad = Vector2(Decimal(random.uniform(-38860, 38860)),Decimal(random.uniform(-38860, 38860)))
+    cuerpo = Cuerpo(i, n_posicion, n_velocidad, Decimal(2.8e21), 5)
+    todos_los_cuerpos.append(cuerpo)
 
 # Uso de la clase para tener la ventana
 puntos = Puntos()
 
 # Agregar los puntos para cada cuerpo
 puntos.agregar_cuerpos(todos_los_cuerpos)
+
+# iniciar la animacion
+puntos.iniciar_animacion()
+
 # variable para el delta time
 last_time = time.perf_counter()
 
