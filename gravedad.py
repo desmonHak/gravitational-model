@@ -57,6 +57,14 @@ class Cuerpo:
         fuerza_x = fuerza_total * Decimal(cos(ang))
         fuerza_y = fuerza_total * Decimal(sin(ang))
         
+        # calcular el vector de la direccion usando trigonometria para el otro
+        ang2 = atan2(otro.posicion.y - self.posicion.y, otro.posicion.x - self.posicion.x )
+        fuerza_x2 = fuerza_total * Decimal(cos(ang2))
+        fuerza_y2 = fuerza_total * Decimal(sin(ang2))
+        
+        # aplicar la fuerza obtenida
+        otro.aplicar_fuerza(Vector2(fuerza_x2, fuerza_y2) * -1, delta_time)
+        
         # aplicar la fuerza obtenida
         self.aplicar_fuerza(Vector2(fuerza_x, fuerza_y) * -1, delta_time)
     
@@ -64,10 +72,6 @@ class Cuerpo:
     def constante(self, delta_time):
         # mover lo que indica la velocidad que tiene multiplicado por el tiempo que tarda cada frame
         self.posicion += self.velocidad * delta_time
-    
-    # asignar una nueva posición
-    def reposicionar(self, nueva_posicion):
-        self.posicion = nueva_posicion
 
 # -------------------- Clase para visualizar los puntos --------------------------------
 class Puntos:
@@ -109,11 +113,6 @@ class Puntos:
         # crear una animacion
         self.ani = FuncAnimation(self.fig, self.actualizar_grafico, interval=16.7 /2, frames=60)
 
-    # agregar un solo cuerpo
-    def agregar_punto(self, cuerpo):
-        self.cuerpos.append(cuerpo)
-        self.actualizar_grafico()
-    
     # agregar varios cuerpos
     def agregar_cuerpos(self, cuerpos):
         for item in cuerpos:
@@ -514,12 +513,13 @@ puntos.agregar_cuerpos(todos_los_cuerpos)
 # variable para el delta time
 last_time = time.perf_counter()
 
+UPT = time.perf_counter()
+
 tiempo_inicial = time.perf_counter()
 tiempo_transcurrido = 0 
 
 # ---------------- empezando el bucle infinito ---------------------------
 while True:
-    # print("iniciar")
     # verificar el modo de tiempo que se esta usando
     if time_mode == True:
         # ~~~~~~~~~~~~~~~~~~~ calcular el delta time ~~~~~~~~~~~~~~~~~~~~
@@ -533,16 +533,15 @@ while True:
         # ~~~~~~~~~~~~~~~~~~~ usar un valor fijo ~~~~~~~~~~~~~~~~~~~~
         delta_time = uniform_time
     
+    CPT = time.perf_counter()
+    DTPT = CPT - UPT
     # ~~~~~~~~~~~ aplicar la fuerza de gravedad entre cada objeto~con todos los demas ~~~~~~~~~~~~~~~~
-    # print("aplicar la gravedad a todos los objetos con todos los otros objetos")
     # iterar la lista de cuerpos
     for i, objeto in enumerate(todos_los_cuerpos):
         for otros_objetos in todos_los_cuerpos[i+1:]:
             objeto.aplicar_gravedad(otros_objetos, delta_time)
-            otros_objetos.aplicar_gravedad(objeto, delta_time)
     
     # ~~~~~~~~~~~~~~~ calcular la inercia 9de cada objeto ~~~~~~~~~~~~~~~~~~~~~~
-    # print("aplicar constantes")
     # iterar la lista de todos los cuerpos
     for i in todos_los_cuerpos:
         # realizar su funcion constante
@@ -558,6 +557,9 @@ while True:
         
         # guardar el tiempo actual (para el delta time del siguiente frame)
         last_time = current_time
+    
+    UPT = CPT
+    print(f"---------------------> {DTPT}")
     
     # indicar la cantidad de dias
     print(str(tiempo_transcurrido /60/60/24) + " dias")
