@@ -1,5 +1,6 @@
 import math
 from decimal import Decimal, getcontext
+import numpy as np
 
 def distancia(vect1, vect2):
     v = vect1 - vect2

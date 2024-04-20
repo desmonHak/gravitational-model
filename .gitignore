@@ -1,3 +1,5 @@
 __pycache__
 *.json
 !solar_sistem.json
+*.jpg
+ign_*
