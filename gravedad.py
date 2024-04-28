@@ -20,10 +20,38 @@ kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
 # precisión de los datos
 getcontext().prec = 250
 
+class Universo:
+    def __init__(self, fisica, grid):
+        self.fisica = fisica
+        self.grid = grid 
+
+class Fisica:
+    def __init__(self, g) -> None:
+        self.g = g
+    
+    def gravedad(self, cuerpo_a, cuerpo_b):
+        '''devuelve el vector de la fuerza que reciven los cuerpos'''
+        # calcular la fuerza usando la formula de newton
+        fuerza_total = self.g*((cuerpo_a.masa * cuerpo_b.masa) / (Decimal_distancia(cuerpo_a.posicion, cuerpo_b.posicion) ** 2))
+        
+        # calcular el vector de la direccion usando trigonometria
+        ang = atan2(cuerpo_a.posicion.y - cuerpo_b.posicion.y, cuerpo_a.posicion.x - cuerpo_b.posicion.x)
+        fuerza_x = fuerza_total * Decimal(cos(ang))
+        fuerza_y = fuerza_total * Decimal(sin(ang))
+        
+        return Vector2(fuerza_x, fuerza_y)
+    
+    def calcular_aceleracion(self, fueza_aplicada, masa, tiempo):
+        '''aplicar la formula F = ma'''
+        aceleracion  = fueza_aplicada / masa
+        # se suma la velocidad a la velocidad previa anterior
+        return aceleracion * tiempo
+    
+
 # ---------------------- Crear la clase Cuerpo ----------------------------
 class Cuerpo:
     # inicializar variables
-    def __init__(self, nombre, posicion, velocidad, masa, diam = None):
+    def __init__(self, nombre, posicion, velocidad, masa, diam = None, exact = True):
         self.nombre = nombre
         self.posicion = posicion
         self.velocidad = velocidad
@@ -33,7 +61,7 @@ class Cuerpo:
         # establecer un color aleatorio
         self.color = colorsys.hsv_to_rgb(random.uniform(0,1),1,1)
         self.diametro = diam
-        
+        self.exact = exact
 
         if diam != None:
             self.diametro = diam
@@ -41,27 +69,22 @@ class Cuerpo:
             self.diametro = float(masa) * dot_scale
     
     # funcion para aplicar una fuerza
-    def aplicar_fuerza(self, fueza_aplicada, tiempo):
+    def aplicar_fuerza(self, fuerza_aplicada, tiempo):
         # aplicar la formula F = ma
-        aceleracion  = fueza_aplicada / self.masa
-        # se suma la velocidad a la velocidad previa anterior
-        self.velocidad = self.velocidad + aceleracion * tiempo
+        velocidad_r = universo.fisica.calcular_aceleracion(fuerza_aplicada, self.masa, tiempo)
+        # sumar la velocidad
+        self.velocidad = self.velocidad + velocidad_r
     
     # funcion para aplicar la gravedad
     def aplicar_gravedad(self, otro, delta_time):
-        # calcular la fuerza usando la formula de newton
-        fuerza_total = g*((self.masa * otro.masa) / (Decimal_distancia(self.posicion, otro.posicion) ** 2))
-        
-        # calcular el vector de la direccion usando trigonometria
-        ang = atan2(self.posicion.y - otro.posicion.y, self.posicion.x - otro.posicion.x)
-        fuerza_x = fuerza_total * Decimal(cos(ang))
-        fuerza_y = fuerza_total * Decimal(sin(ang))
+        # calcular la gravedad
+        fuerza = universo.fisica.gravedad(self, otro)
         
         # aplicar la fuerza obtenida al otro
-        otro.aplicar_fuerza(Vector2(fuerza_x, fuerza_y), delta_time)
+        otro.aplicar_fuerza(Vector2(fuerza.x, fuerza.y), delta_time)
         
-        # aplicar la fuerza obtenida
-        self.aplicar_fuerza(Vector2(fuerza_x, fuerza_y) * -1, delta_time)
+        # aplicar la fuerza obtenida a el mismo
+        self.aplicar_fuerza(Vector2(fuerza.x, fuerza.y) * -1, delta_time)
     
     # funcion para calcular la posición del objeto en cada momento
     def constante(self, delta_time):
@@ -255,6 +278,7 @@ view_scale = Vector2(150,150)
 
 # ------------ crear cuerpos -------------------------
 todos_los_cuerpos = list()
+todos_los_aproximados = list()
 
 sigue = True
 # ----------- bucle de personalizacion del usuario -----------------------
@@ -499,12 +523,19 @@ while sigue:
         # indicar un error al no ser un comando valido
         print_error(f"\"{input_del_usuario}\"", mensaje_extra="no es un comando valido. Para ayuda escriba: help")
 
+grid = Grid(15,15, view_scale.x)
+
+fisica = Fisica(g)
+universo = Universo(fisica,grid)
+
 # <- colocar funciones de generacion de cuerpos aqui
 for i in range(100):
     n_posicion = Vector2(Decimal(random.uniform(-4558857000000, 4558857000000)),Decimal(random.uniform(-4558857000000, 4558857000000)))
-    n_velocidad = Vector2(Decimal(random.uniform(-38860, 38860)),Decimal(random.uniform(-38860, 38860)))
-    cuerpo = Cuerpo(str(i), n_posicion, n_velocidad, Decimal(2.8e21), 5)
-    todos_los_cuerpos.append(cuerpo)
+    n_velocidad = Vector2(Decimal(random.uniform(0, 0)),Decimal(random.uniform(0, 0)))
+    cuerpo = Cuerpo(str(i), n_posicion, n_velocidad, Decimal(2.8e21), 5, exact=False)
+    todos_los_aproximados.append(cuerpo)
+
+universo.grid.actualizar(todos_los_aproximados)
 
 # Uso de la clase para tener la ventana
 puntos = Puntos()
@@ -512,6 +543,7 @@ puntos = Puntos()
 # Agregar los puntos para cada cuerpo
 puntos.agregar_cuerpos(todos_los_cuerpos)
 
+puntos.agregar_cuerpos(todos_los_aproximados)
 # iniciar la animacion
 puntos.iniciar_animacion()
 
@@ -522,6 +554,7 @@ UPT = time.perf_counter()
 
 tiempo_inicial = time.perf_counter()
 tiempo_transcurrido = 0 
+
 
 # ---------------- empezando el bucle infinito ---------------------------
 while True:
@@ -544,7 +577,32 @@ while True:
     # iterar la lista de cuerpos
     for i, objeto in enumerate(todos_los_cuerpos):
         for otros_objetos in todos_los_cuerpos[i+1:]:
+            # aplicar la gravedad entre estos objetos
             objeto.aplicar_gravedad(otros_objetos, delta_time)
+    
+    
+    # iterar la lista de aproximados
+    todos = universo.grid.get_all()
+    for i, pos in enumerate(todos):
+        este = Cuerpo(str(pos.posicion), pos.posicion * universo.grid.tamaño, Vector2(0,0), pos.masa)
+        for otras_pos in todos[i+1:]:
+            otro = Cuerpo(str(otras_pos.posicion), otras_pos.posicion * universo.grid.tamaño, Vector2(0,0), otras_pos.masa)
+            fuerza = universo.fisica.gravedad(este, otro)
+            
+            for cuerpo in pos.valor:
+                cuerpo.aplicar_fuerza(fuerza * -1,delta_time)
+            
+            for cuerpo in otras_pos.valor:
+                cuerpo.aplicar_fuerza(fuerza,delta_time)
+        
+        for otro in todos_los_cuerpos:
+            fuerza = universo.fisica.gravedad(este, otro)
+            
+            for cuerpo in pos.valor:
+                cuerpo.aplicar_fuerza(fuerza * -1,delta_time)
+        
+        for cuerpo in pos.valor:
+            cuerpo.constante(delta_time)
     
     # ~~~~~~~~~~~~~~~ calcular la inercia 9de cada objeto ~~~~~~~~~~~~~~~~~~~~~~
     # iterar la lista de todos los cuerpos
