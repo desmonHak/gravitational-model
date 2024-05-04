@@ -24,6 +24,9 @@ class Vector2:
         self.x = x
         self.y = y
     
+    def magnitud(self):
+        return Decimal(math.sqrt(self.x ** 2 + self.y ** 2))
+    
     def __add__(self, otro_vector):
         return Vector2(Decimal(self.x) + Decimal(otro_vector.x), Decimal(self.y) + Decimal(otro_vector.y))
     
@@ -46,6 +49,23 @@ class Casillero:
         self.posicion = posicion
         self.valor = valor
         self.masa = masa
+        
+    def centro_de_masa(self):
+        # Inicializar variables para el numerador en 2D
+        numerador_x = 0
+        numerador_y = 0
+        
+        # Calcular el numerador en 2D
+        for i in self.valor:
+            numerador_x += i.masa * i.posicion.x
+            numerador_y += i.masa * i.posicion.y
+
+        # Calcular el centro de masa en 2D
+        masas = [a.masa for a in self.valor]
+        denominador = sum(masas)
+        centro_de_masa = Vector2(numerador_x / denominador, numerador_y / denominador)
+
+        return centro_de_masa
 
 class Grid:
     '''Una grid infinita

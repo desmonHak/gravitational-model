@@ -41,6 +41,10 @@ class Fisica:
         
         return Vector2(fuerza_x, fuerza_y)
     
+    def calcular_velocidad_orbital(self, cuerpo_central, cuerpo_orbiando):
+        v = Decimal(math.sqrt((self.g * cuerpo_central.masa)/ Decimal_distancia(cuerpo_central.posicion, cuerpo_orbiando.posicion)))
+        return v
+        
     def calcular_aceleracion(self, fueza_aplicada, masa, tiempo):
         '''aplicar la formula F = ma'''
         aceleracion  = fueza_aplicada / masa
@@ -137,7 +141,7 @@ class Puntos:
     # funcion para actualizar el grafico
     def actualizar_grafico(self):
         # establecer las variables que se van a usar en el grafico
-        xs, ys, nombres = zip(*[(i.posicion.x, i.posicion.y, i.nombre) for i in self.cuerpos])
+        xs, ys, nombres, pres = zip(*[(i.posicion.x, i.posicion.y, i.nombre, i.exact) for i in self.cuerpos])
         # actualizar las posiciones
         self.scatter.set_offsets(list(zip(xs, ys)))
         
@@ -146,8 +150,9 @@ class Puntos:
             annotation.remove()
         
         # Mostrar etiquetas en blanco en cada punto
-        for x, y, nombre in zip(xs, ys, nombres):
-            self.ax.annotate(nombre, (x, y), ha='center', va='top', color='white', fontsize=8, xytext=(0, -10), textcoords='offset points')
+        for x, y, nombre, pre in zip(xs, ys, nombres, pres):
+            if pre == True:
+                self.ax.annotate(nombre, (x, y), ha='center', va='top', color='white', fontsize=8, xytext=(0, -10), textcoords='offset points')
     
         # mostrar cambios
         self.fig.canvas.get_tk_widget().update()
@@ -523,17 +528,43 @@ while sigue:
         # indicar un error al no ser un comando valido
         print_error(f"\"{input_del_usuario}\"", mensaje_extra="no es un comando valido. Para ayuda escriba: help")
 
-grid = Grid(15,15, view_scale.x)
+grid = Grid(300,300, view_scale.x)
 
 fisica = Fisica(g)
 universo = Universo(fisica,grid)
 
 # <- colocar funciones de generacion de cuerpos aqui
-for i in range(100):
-    n_posicion = Vector2(Decimal(random.uniform(-4558857000000, 4558857000000)),Decimal(random.uniform(-4558857000000, 4558857000000)))
-    n_velocidad = Vector2(Decimal(random.uniform(0, 0)),Decimal(random.uniform(0, 0)))
-    cuerpo = Cuerpo(str(i), n_posicion, n_velocidad, Decimal(2.8e21), 5, exact=False)
+for i in range(25):
+    n_posicion = Vector2(Decimal(random.uniform(-4558857000000, 4558857000000)), Decimal(random.uniform(-4558857000000, 4558857000000)))
+    n_velocidad = Vector2(Decimal(random.uniform(-19430, 19430)), Decimal(random.uniform(-19430, 19430)))
+    cuerpo = Cuerpo(str(i), n_posicion, n_velocidad, Decimal(2.8e21), 3, exact=False)
     todos_los_aproximados.append(cuerpo)
+
+for i in range(500):
+    n_posicion = Vector2(Decimal(random.uniform(-508632758000, 508632758000)), Decimal(random.uniform(-508632758000, 508632758000)))
+    while Decimal(314155527000) > Decimal_distancia(Vector2(0,0), n_posicion) or Decimal_distancia(Vector2(0,0), n_posicion) > Decimal(508632758000):
+        n_posicion = Vector2(Decimal(random.uniform(-508632758000, 508632758000)), Decimal(random.uniform(-508632758000, 508632758000)))
+    # 249261000000
+    # 314155527000
+    # 471315255768.9361572265625
+    print(str(Decimal_distancia(Vector2(0,0), n_posicion)))
+    # 508632758000
+    # 816363000000
+    n_velocidad = Vector2(0,0)
+    
+    cuerpo_temp = Cuerpo(str(i), n_posicion, n_velocidad, Decimal(2.8e21))
+    M_velocidad = universo.fisica.calcular_velocidad_orbital(todos_los_cuerpos[0], cuerpo_temp)
+    # calcular el vector de la direccion usando trigonometria
+    ang = atan2(n_posicion.y, n_posicion.x)
+    n_velocidad.x = M_velocidad * Decimal(cos(ang + 1.57079632679))
+    n_velocidad.y = M_velocidad * Decimal(sin(ang + 1.57079632679))
+    
+    print(str(n_velocidad))
+    print(str(n_velocidad.magnitud()))
+    
+    cuerpo_nuevo = Cuerpo(str(i) + " Cinturon", n_posicion, n_velocidad, Decimal(2.8e21), diam=3, exact=False)
+    todos_los_aproximados.append(cuerpo_nuevo)
+
 
 universo.grid.actualizar(todos_los_aproximados)
 
@@ -544,6 +575,9 @@ puntos = Puntos()
 puntos.agregar_cuerpos(todos_los_cuerpos)
 
 puntos.agregar_cuerpos(todos_los_aproximados)
+
+for i in puntos.cuerpos:
+    print(i.nombre)
 # iniciar la animacion
 puntos.iniciar_animacion()
 
@@ -584,22 +618,23 @@ while True:
     # iterar la lista de aproximados
     todos = universo.grid.get_all()
     for i, pos in enumerate(todos):
-        este = Cuerpo(str(pos.posicion), pos.posicion * universo.grid.tamaño, Vector2(0,0), pos.masa)
-        for otras_pos in todos[i+1:]:
-            otro = Cuerpo(str(otras_pos.posicion), otras_pos.posicion * universo.grid.tamaño, Vector2(0,0), otras_pos.masa)
-            fuerza = universo.fisica.gravedad(este, otro)
+        centro_de_masas = pos.centro_de_masa()
+        este = Cuerpo(str(pos.posicion), centro_de_masas, Vector2(0,0), pos.masa)
+        # for otras_pos in todos[i+1:]:
+        #     otro = Cuerpo(str(otras_pos.posicion), otras_pos.posicion * universo.grid.tamaño, Vector2(0,0), otras_pos.masa)
+        #     fuerza = universo.fisica.gravedad(este, otro)
             
-            for cuerpo in pos.valor:
-                cuerpo.aplicar_fuerza(fuerza * -1,delta_time)
+        #     for cuerpo in pos.valor:
+        #         cuerpo.aplicar_fuerza(fuerza * -1,delta_time)
             
-            for cuerpo in otras_pos.valor:
-                cuerpo.aplicar_fuerza(fuerza,delta_time)
+        #     for cuerpo in otras_pos.valor:
+        #         cuerpo.aplicar_fuerza(fuerza,delta_time)
         
         for otro in todos_los_cuerpos:
             fuerza = universo.fisica.gravedad(este, otro)
             
             for cuerpo in pos.valor:
-                cuerpo.aplicar_fuerza(fuerza * -1,delta_time)
+                cuerpo.aplicar_fuerza(fuerza * -1 ,delta_time)
         
         for cuerpo in pos.valor:
             cuerpo.constante(delta_time)
