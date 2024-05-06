@@ -26,6 +26,12 @@ En este programa puedes hacer simulaciones de gravedad en 2 dimensiones.
   - delta_time varia dependiendo de cuanto tarda entre frame y frame (automático)
   - uniform un valor constante cada frame
 
+9. solar_sistem: contiene algunos datos especificos del sistema solar:
+
+  - asteroid_belt cantidad de asteroides en el cinturon
+  - kuiper_belt cantidad de asteroides en el cinturon de kuiper
+  - asteroids cantidad de asteroides aleatorios
+
 Para asignación de vectores 2 se escribe x;y separando los valores con un punto y coma
 
 ej: 5;8 indica la posición 5 en X, 8 en Y
@@ -40,5 +46,20 @@ load solar_sistem.json
 size view 100e11;100e11
 time.mode uniform 100000
 ```
+- se pude añadir el cinturon de asteroides de la siguiente manera:
+```
+solar_sistem asteroid_belt 250
+``` 
+se puede cambiar la cantidad de asteroides cambiando el ultimo numero
+- se pude añadir el cinturon de kuiper de la siguiente manera
+```
+solar_sistem kuiper_belt 300
+```
+se puede cambiar la cantidad de asteroides cambiando el ultimo numero
+- se pude añadir asteroides sueltos de la siguiente manera
+```
+solar_sistem asteroids 100
+```
+se puede cambiar la cantidad de asteroides cambiando el ultimo numero
 
 el valor de time.mode uniform se puede cambiar para variar la velocidad

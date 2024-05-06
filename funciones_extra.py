@@ -50,6 +50,14 @@ def es_numero(cadena):
     except ValueError:
         return False
 
+# verificar si una string es combertible a int
+def es_numero_int(cadena):
+    try:
+        int(cadena)
+        return True
+    except ValueError:
+        return False
+
 def print_error(tipo_de_error, mensaje_extra = ""):
     if mensaje_extra != "":
         print(f"{c["rojo"]}{tipo_de_error}: {mensaje_extra}{c["default"]}")

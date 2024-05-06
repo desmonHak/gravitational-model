@@ -285,6 +285,10 @@ view_scale = Vector2(150,150)
 todos_los_cuerpos = list()
 todos_los_aproximados = list()
 
+cantidad_de_asteroides_0 = 0
+cantidad_de_asteroides_1 = 0
+cantidad_de_asteroides_2 = 0
+
 sigue = True
 # ----------- bucle de personalizacion del usuario -----------------------
 while sigue:
@@ -524,6 +528,36 @@ while sigue:
         else:
             print_error(tipos_de_errores[1])
     
+    # ~~~~~~~~~~~~~~~~~~~~ si dice "solar_sistem" ~~~~~~~~~~~~~~~~~~~~
+    elif input_separado[0] == "solar_sistem":
+        if len(input_separado) == 3:
+            if input_separado[1] == "asteroid_belt":
+                if es_numero_int(input_separado[2]):
+                    cantidad_de_asteroides_1 = int(input_separado[2])
+                    print(f"{c['amarillo']}La cantidad de asteroides en el cinturon ahora es de: {cantidad_de_asteroides_1} {c["default"]}")
+                else:
+                    print_error(tipos_de_errores[0], "La cantidad de asteroides tiene que ser compatible con int")
+            
+            elif input_separado[1] == "kuiper_belt":
+                if es_numero_int(input_separado[2]):
+                    cantidad_de_asteroides_2 = int(input_separado[2])
+                    print(f"{c['amarillo']}La cantidad de asteroides en el cinturon de kuiper ahora es de: {cantidad_de_asteroides_2} {c["default"]}")
+                else:
+                    print_error(tipos_de_errores[0], "La cantidad de asteroides tiene que ser compatible con int")
+            
+            elif input_separado[1] == "asteroids":
+                if es_numero_int(input_separado[2]):
+                    cantidad_de_asteroides_0 = int(input_separado[2])
+                    print(f"{c['amarillo']}La cantidad de asteroides ahora es de: {cantidad_de_asteroides_0} {c["default"]}")
+                else:
+                    print_error(tipos_de_errores[0], "La cantidad de asteroides tiene que ser compatible con int")
+            
+            else:
+                print_error(tipos_de_errores[3], f"El dato {input_separado[1]} no exite")
+        else:
+            print_error(tipos_de_errores[1], "La sintaxis deve ser: \"solar_sistem {valor a modificar} {cantidad}\"")
+        
+
     else:
         # indicar un error al no ser un comando valido
         print_error(f"\"{input_del_usuario}\"", mensaje_extra="no es un comando valido. Para ayuda escriba: help")
@@ -534,22 +568,10 @@ fisica = Fisica(g)
 universo = Universo(fisica,grid)
 
 # <- colocar funciones de generacion de cuerpos aqui
-for i in range(25):
-    n_posicion = Vector2(Decimal(random.uniform(-4558857000000, 4558857000000)), Decimal(random.uniform(-4558857000000, 4558857000000)))
-    n_velocidad = Vector2(Decimal(random.uniform(-19430, 19430)), Decimal(random.uniform(-19430, 19430)))
-    cuerpo = Cuerpo(str(i), n_posicion, n_velocidad, Decimal(2.8e21), 3, exact=False)
-    todos_los_aproximados.append(cuerpo)
 
-for i in range(500):
-    n_posicion = Vector2(Decimal(random.uniform(-508632758000, 508632758000)), Decimal(random.uniform(-508632758000, 508632758000)))
-    while Decimal(314155527000) > Decimal_distancia(Vector2(0,0), n_posicion) or Decimal_distancia(Vector2(0,0), n_posicion) > Decimal(508632758000):
-        n_posicion = Vector2(Decimal(random.uniform(-508632758000, 508632758000)), Decimal(random.uniform(-508632758000, 508632758000)))
-    # 249261000000
-    # 314155527000
-    # 471315255768.9361572265625
-    print(str(Decimal_distancia(Vector2(0,0), n_posicion)))
-    # 508632758000
-    # 816363000000
+# ---------- crear asteroides aleatorios en todo el sistema solar ---------- 
+for i in range(cantidad_de_asteroides_0):
+    n_posicion = Vector2(Decimal(random.uniform(-4558857000000, 4558857000000)), Decimal(random.uniform(-4558857000000, 4558857000000)))
     n_velocidad = Vector2(0,0)
     
     cuerpo_temp = Cuerpo(str(i), n_posicion, n_velocidad, Decimal(2.8e21))
@@ -559,12 +581,53 @@ for i in range(500):
     n_velocidad.x = M_velocidad * Decimal(cos(ang + 1.57079632679))
     n_velocidad.y = M_velocidad * Decimal(sin(ang + 1.57079632679))
     
-    print(str(n_velocidad))
-    print(str(n_velocidad.magnitud()))
+    cuerpo = Cuerpo(str(i), n_posicion, n_velocidad, Decimal(2.8e21), 3, exact=False)
+    todos_los_aproximados.append(cuerpo)
+
+# ---------- crear asteroides en el cinturon de asteroides ---------- 
+for i in range(cantidad_de_asteroides_1):
+    n_posicion = Vector2(Decimal(random.uniform(-508632758000, 508632758000)), Decimal(random.uniform(-508632758000, 508632758000)))
+    while Decimal(3.291e+11) > Decimal_distancia(Vector2(0,0), n_posicion) or Decimal_distancia(Vector2(0,0), n_posicion) > Decimal(4.787e+11):
+        n_posicion = Vector2(Decimal(random.uniform(-508632758000, 508632758000)), Decimal(random.uniform(-508632758000, 508632758000)))
+
+    # print(str(Decimal_distancia(Vector2(0,0), n_posicion)))
+
+    n_velocidad = Vector2(0,0)
+    
+    cuerpo_temp = Cuerpo(str(i), n_posicion, n_velocidad, Decimal(2.8e21))
+    M_velocidad = universo.fisica.calcular_velocidad_orbital(todos_los_cuerpos[0], cuerpo_temp)
+    # calcular el vector de la direccion usando trigonometria
+    ang = atan2(n_posicion.y, n_posicion.x)
+    n_velocidad.x = M_velocidad * Decimal(cos(ang + 1.57079632679))
+    n_velocidad.y = M_velocidad * Decimal(sin(ang + 1.57079632679))
+    
+    # print(str(n_velocidad))
+    # print(str(n_velocidad.magnitud()))
     
     cuerpo_nuevo = Cuerpo(str(i) + " Cinturon", n_posicion, n_velocidad, Decimal(2.8e21), diam=3, exact=False)
     todos_los_aproximados.append(cuerpo_nuevo)
 
+# ---------- crear asteroides en el cinturon de kuiper ---------- 
+for i in range(cantidad_de_asteroides_2):
+    n_posicion = Vector2(Decimal(random.uniform(-7.48e+12, 7.48e+12)), Decimal(random.uniform(-7.48e+12, 7.48e+12)))
+    while Decimal(4488000000000) > Decimal_distancia(Vector2(0,0), n_posicion) or Decimal_distancia(Vector2(0,0), n_posicion) > Decimal(7480000000000):
+        n_posicion = Vector2(Decimal(random.uniform(-7.48e+12, 7.48e+12)), Decimal(random.uniform(-7.48e+12, 7.48e+12)))
+        
+    # print(str(Decimal_distancia(Vector2(0,0), n_posicion)))
+    n_velocidad = Vector2(0,0)
+    
+    cuerpo_temp = Cuerpo(str(i), n_posicion, n_velocidad, Decimal(2.8e21))
+    M_velocidad = universo.fisica.calcular_velocidad_orbital(todos_los_cuerpos[0], cuerpo_temp)
+    # calcular el vector de la direccion usando trigonometria
+    ang = atan2(n_posicion.y, n_posicion.x)
+    n_velocidad.x = M_velocidad * Decimal(cos(ang + 1.57079632679))
+    n_velocidad.y = M_velocidad * Decimal(sin(ang + 1.57079632679))
+    
+    # print(str(n_velocidad))
+    # print(str(n_velocidad.magnitud()))
+    
+    cuerpo_nuevo = Cuerpo(str(i) + " Cinturon", n_posicion, n_velocidad, Decimal(2.8e21), diam=3, exact=False)
+    todos_los_aproximados.append(cuerpo_nuevo)
 
 universo.grid.actualizar(todos_los_aproximados)
 
