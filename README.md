@@ -4,35 +4,35 @@
 En este programa puedes hacer simulaciones de gravedad en 2 dimensiones.
 
 ## instrucciones de uso del programa:
-1. help: Ver todas las acciones posibles
+**1. help:** Ver todas las acciones posibles
 
-2. add: añadir un cuerpo
+**2. add:** añadir un cuerpo
 
-3. G: constante de gravitación universal
+**3. G:** constante de gravitación universal
 	
   - ? muestra su valor actual
   - = igualar a (valor siguiente a \"=\")
 
-4. run: empezar simulacion
+**4. run:** empezar simulacion
 
-5. cuerpos: datos de los cuerpos
+**5. cuerpos:** datos de los cuerpos
 
-6. load: cargar un archivo: load [nombre_del_archivo.json]
+**6. load:** cargar un archivo: load [nombre_del_archivo.json]
 
-7. save: guardar datos de los cuerpos y el valor de G: save [nombre_del_archivo.json]
+**7. save:** guardar datos de los cuerpos y el valor de G: save [nombre_del_archivo.json]
 
-8. time.mode: asignar el tipo de tiempo que se va a usar
+**8. time.mode:** asignar el tipo de tiempo que se va a usar
   
   - delta_time varia dependiendo de cuanto tarda entre frame y frame (automático)
   - uniform un valor constante cada frame
 
-9. solar_sistem: contiene algunos datos especificos del sistema solar:
+**9. solar_sistem:** contiene algunos datos especificos del sistema solar:
 
   - asteroid_belt cantidad de asteroides en el cinturon
   - kuiper_belt cantidad de asteroides en el cinturon de kuiper
   - asteroids cantidad de asteroides aleatorios
 
-10. active_save: Guarda los datos generados durante la simulación en un archivo .json
+**10. active_save:** Guarda los datos generados durante la simulación en un archivo .json
 
 Para asignación de vectores 2 se escribe x;y separando los valores con un punto y coma
 
