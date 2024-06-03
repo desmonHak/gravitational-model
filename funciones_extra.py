@@ -71,21 +71,42 @@ def crear_archivo_json(lista_de_cuerpos, gravitacion_universal):
         diccionario_para_un_cuerpo = {
             "nombre": item.nombre,
             "posicion": {
-                "x": item.posicion.x,
-                "y": item.posicion.y
+                "x": float(item.posicion.x),
+                "y": float(item.posicion.y)
             },
             "velocidad": {
-                "x": item.velocidad.x,
-                "y": item.velocidad.y
+                "x": float(item.velocidad.x),
+                "y": float(item.velocidad.y)
             },
-            "masa": item.masa,
-            "diametro": item.diametro
+            "masa": float(item.masa),
+            "diametro": float(item.diametro)
             
         }
         cuerpos.append(diccionario_para_un_cuerpo)
     
     archivo = {
         "cuerpos": cuerpos,
-        "G": gravitacion_universal
+        "G": float(gravitacion_universal)
+    }
+    return archivo
+
+def crear_archivo_json_de_sim(lista_de_cuerpos, ciclos):
+    cuerpos = {}
+    
+    for item in lista_de_cuerpos:
+        
+        posiciones = []
+        for pos in item.posiciones:
+            pos_bien = {
+                "x": float(pos.x),
+                "y": float(pos.y)
+            }
+            posiciones.append(pos_bien)
+            
+        cuerpos[item.nombre] = posiciones
+    
+    archivo = {
+        "cuerpos": cuerpos,
+        "ciclos": ciclos
     }
     return archivo

@@ -66,11 +66,15 @@ class Cuerpo:
         self.color = colorsys.hsv_to_rgb(random.uniform(0,1),1,1)
         self.diametro = diam
         self.exact = exact
+        self.posiciones = []
 
         if diam != None:
             self.diametro = diam
         else:
             self.diametro = float(masa) * dot_scale
+    
+    def guardar_pos(self):
+        self.posiciones.append(self.posicion)
     
     # funcion para aplicar una fuerza
     def aplicar_fuerza(self, fuerza_aplicada, tiempo):
@@ -280,6 +284,11 @@ dot_scale = 1
 
 # escala del campo de vision
 view_scale = Vector2(150,150)
+
+# guardado de la simulacion
+active_save = False
+save_in = ""
+ciclos = 1
 
 # ------------ crear cuerpos -------------------------
 todos_los_cuerpos = list()
@@ -557,6 +566,30 @@ while sigue:
         else:
             print_error(tipos_de_errores[1], "La sintaxis deve ser: \"solar_sistem {valor a modificar} {cantidad}\"")
         
+    # ~~~~~~~~~~~~~~~~~~~~ si dice "active_save" ~~~~~~~~~~~~~~~~~~~~
+    elif input_separado[0] == "active_save":
+        print(f"""{c["amarillo"]}Este comando gruarda los datos generados durante la simulacion, no los datos proporcionados en esta instancia
+si lo que decea es guardar los datos iniciales proporcionados utilice el comando \"save\"
+si decea cancelar este comando deje la casilla vacia{c["default"]}""")
+        
+        si = input('Ruta de guardado: ')
+        if si != "":
+            active_save = True
+            save_in = si
+            cic = input('Ciclos: ')
+            while es_numero_int(cic) == False:
+                print_error(tipos_de_errores[2],"la cantidad de ciclos debe de ser un valor int")
+                cic = input('Ciclos: ')
+                if cic == "":
+                    break
+            
+            if cic != "":
+                active_save = True
+                ciclos = int(cic)
+            else:
+                active_save = False
+        else:
+            active_save = False
 
     else:
         # indicar un error al no ser un comando valido
@@ -652,8 +685,8 @@ UPT = time.perf_counter()
 tiempo_inicial = time.perf_counter()
 tiempo_transcurrido = 0 
 
-
 # ---------------- empezando el bucle infinito ---------------------------
+ciclos_transcurridos = 0
 while True:
     # verificar el modo de tiempo que se esta usando
     if time_mode == True:
@@ -724,3 +757,19 @@ while True:
     
     # indicar la cantidad de dias
     print(str(tiempo_transcurrido /60/60/24) + " dias")
+    
+    if active_save == True:
+        ciclos_transcurridos += 1
+        
+        for i in todos_los_cuerpos:
+            i.guardar_pos()
+            
+        if(ciclos_transcurridos >= ciclos):
+            break
+if active_save == True:
+    # se crea la variable con los datos
+    datos = crear_archivo_json_de_sim(todos_los_cuerpos,ciclos)
+    # se crea el archivo
+    with open(save_in, 'w') as archivo:
+        # se añaden los datos
+        json.dump(datos, archivo, indent=4)
