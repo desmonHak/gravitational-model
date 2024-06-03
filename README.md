@@ -17,9 +17,9 @@ En este programa puedes hacer simulaciones de gravedad en 2 dimensiones.
 
 5. cuerpos: datos de los cuerpos
 
-6. load: cargar un archivo: load [nombre del archivo]
+6. load: cargar un archivo: load [nombre_del_archivo.json]
 
-7. save: guardar datos de los cuerpos y el valor de G: save [nombre del archivo]
+7. save: guardar datos de los cuerpos y el valor de G: save [nombre_del_archivo.json]
 
 8. time.mode: asignar el tipo de tiempo que se va a usar
   
@@ -31,6 +31,8 @@ En este programa puedes hacer simulaciones de gravedad en 2 dimensiones.
   - asteroid_belt cantidad de asteroides en el cinturon
   - kuiper_belt cantidad de asteroides en el cinturon de kuiper
   - asteroids cantidad de asteroides aleatorios
+
+10. active_save: Guarda los datos generados durante la simulación en un archivo .json
 
 Para asignación de vectores 2 se escribe x;y separando los valores con un punto y coma
 

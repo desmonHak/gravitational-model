@@ -321,14 +321,15 @@ while sigue:
     = igualar a (valor siguiente a \"=\")
 {c["amarillo"]}run:{c["default"]} empezar simulacion
 {c["amarillo"]}cuerpos:{c["default"]} datos de los cuerpos
-{c["amarillo"]}load:{c["default"]} cargar un archivo: load [nombre del archivo]
-{c["amarillo"]}save:{c["default"]} guardar datos de los cuerpos: save [nombre del archivo]
+{c["amarillo"]}load:{c["default"]} cargar un archivo: load [nombre_del_archivo.json]
+{c["amarillo"]}save:{c["default"]} guardar datos de los cuerpos: save [nombre_del_archivo.json]
 {c["amarillo"]}time.mode:{c["default"]} asignar el tipo de tiempo que se va a usar
   - delta_time varia dependiendo de cuanto tarda entre frame y frame (automático)
   - uniform un valor constante cada frame
 {c["amarillo"]}size:{c["default"]} valores de tamaños
   - dots tamaño automático de los cuerpos
   - view tamaño de visión
+{c["amarillo"]}active_save:{c["default"]} Guarda los datos generados durante la simulación en un archivo .json
   
   mas informacion en https://github.com/pianistandcats/gravitational-model""")
         
