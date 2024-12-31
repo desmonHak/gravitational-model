@@ -78,6 +78,9 @@ class Grid:
         (pos_x3,pos_y3): valor_en_ese_punto3
     }
     
+    el tamaño de cada cuadrado va ser igual al la cantidad de columnas que hay en una porcion determinada
+    (en el caso de la gravedad se usa el rango de vicion inical)
+    
     ------
     get_value:
     ------
@@ -157,12 +160,12 @@ class Grid:
     def get_all(self):
         '''retornar una lista iterable de todas las posiciones'''
         todos = []
+                
         for key, value in self.grid.items():
             masa = 0
             for i in self.get_value(Vector2(key[0],key[1])):
                 masa += i.masa
-                
-        for key, value in self.grid.items():
+            
             nuevo = Casillero(Vector2(key[0], key[1]), value, masa)
             todos.append(nuevo)
         

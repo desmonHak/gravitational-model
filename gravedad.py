@@ -10,6 +10,7 @@ import random
 import colorsys
 import json
 import os
+import sys
 import ctypes
 from decimal import Decimal, getcontext
 
@@ -21,9 +22,12 @@ kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
 getcontext().prec = 250
 
 class Universo:
-    def __init__(self, fisica, grid):
+    def __init__(self, fisica, grid_h, grid_m, grid_l, grid_hh):
         self.fisica = fisica
-        self.grid = grid 
+        self.grid_h = grid_h 
+        self.grid_hh = grid_hh
+        self.grid_m = grid_m
+        self.grid_l = grid_l
 
 class Fisica:
     def __init__(self, g) -> None:
@@ -51,6 +55,43 @@ class Fisica:
         # se suma la velocidad a la velocidad previa anterior
         return aceleracion * tiempo
     
+    # ------------- Kepler
+    def período_orbital(self, masa, semieje_mayor):
+        T = 2*math.pi * (math.sqrt((semieje_mayor ** 3) / float((self.g * masa))))
+        return T
+    
+    def anomalía_media(self, masa, semieje_mayor, tiempo):
+        M = ((2*math.pi) / self.período_orbital(masa, semieje_mayor)) * tiempo
+        return M
+    
+    def resolver_kepler(self, M, e, tol=1e-6):
+        E = M  # Primera aproximación
+        while True:
+            E_new = E - (E - e * np.sin(E) - M) / (1 - e * np.cos(E))
+            if abs(E_new - E) < tol:
+                break
+            E = E_new
+        return E
+    
+    def anomalia_verdadera(self, E, excentricidad):
+        tan_nu_2 = math.sqrt((1 + excentricidad) / (1 - excentricidad)) * math.tan(E / 2)
+        nu = 2 * math.atan(tan_nu_2)
+        return nu
+    
+    def posicion_orbital(self,cuerpo, tiempo):
+        masa = cuerpo.cuerpo_que_orbita.masa
+        semieje_mayor = cuerpo.semieje_mayor
+        exentricidad = cuerpo.exentricidad
+        
+        M = self.anomalía_media(masa, semieje_mayor, tiempo)
+        E = self.resolver_kepler(M, exentricidad)
+        r = Decimal(semieje_mayor) * Decimal((1 - exentricidad * math.cos(E)))
+        angulo = self.anomalia_verdadera(E, exentricidad)
+        
+        x = Decimal(r * Decimal(math.cos(angulo + cuerpo.velocidad.y)))
+        y = Decimal(r * Decimal(math.sin(angulo + cuerpo.velocidad.y)))
+        return Vector2(x,y)
+
 
 # ---------------------- Crear la clase Cuerpo ----------------------------
 class Cuerpo:
@@ -98,6 +139,14 @@ class Cuerpo:
     def constante(self, delta_time):
         # mover lo que indica la velocidad que tiene multiplicado por el tiempo que tarda cada frame
         self.posicion += self.velocidad * delta_time
+        self.guardar_pos()
+
+class Cuerpo_anillo(Cuerpo):
+    def __init__(self, nombre, posicion, velocidad, masa, orbita, exentricidad, semieje_mayor, diam=None, exact=True):
+        super().__init__(nombre, posicion, velocidad, masa, diam, exact)
+        self.cuerpo_que_orbita = orbita
+        self.exentricidad = exentricidad
+        self.semieje_mayor = semieje_mayor
 
 # -------------------- Clase para visualizar los puntos --------------------------------
 class Puntos:
@@ -131,12 +180,36 @@ class Puntos:
         for spine in self.ax.spines.values():
             spine.set_color('gray')
         
+        self.multiplicador_de_tiempo = 1
+        
         # activar el modo interactivo en el grafico
         plt.ion()
         
         # crear una animacion
         self.ani = FuncAnimation(self.fig, self.actualizar_grafico, interval=16.7 /2, frames=60)
+        self.fig.canvas.mpl_connect('key_press_event', self.on_key)
 
+    def on_key(self, event):
+        print(f"Tecla presionada: {event.key}")
+        
+        
+        move_factor = 2
+        # Lógica para manejar diferentes teclas
+        if event.key == 'escape':  # Si se presiona la tecla ESC
+            exit()
+        elif event.key == '+':  # Mover hacia la izquierda
+            if self.multiplicador_de_tiempo < 800:
+                self.multiplicador_de_tiempo *= move_factor
+            else:
+                self.multiplicador_de_tiempo = 800
+                print("--------------------------------- tiempo maximo -------------------------------")
+        elif event.key == '-':  # Mover hacia la derecha
+            if self.multiplicador_de_tiempo > 0.01:
+                self.multiplicador_de_tiempo /= move_factor
+            else:
+                self.multiplicador_de_tiempo = 0.01
+                print("--------------------------------- tiempo minimo -------------------------------")
+                
     # agregar varios cuerpos
     def agregar_cuerpos(self, cuerpos):
         for item in cuerpos:
@@ -170,6 +243,49 @@ class Puntos:
         self.scatter.set_sizes(list(diametros))
         # actualizar el color
         self.scatter.set_color(list(colores))
+
+class Anillo:
+    def __init__(self, planeta, distancia_min, distancia_max, cantidad, masa):
+        self.planeta = planeta
+        self.distancia_min = distancia_min
+        self.distancia_max = distancia_max
+        self.masa = Decimal(masa)
+        self.cantidad = cantidad
+        # establecer una tag aleatoria
+        self.tag = crear_string_random(5)
+    
+    def crear_cuerpos_anillo(self):
+        cuerpos = list()
+        for i in range(self.cantidad):
+            pos = Vector2(random.uniform(self.distancia_min, self.distancia_max), random.uniform(0, 2 * math.pi))
+            cuerpo = Cuerpo_anillo(str(i), Vector2(Decimal(1),Decimal(1)), pos, self.masa, self.planeta, random.uniform(0, 0.1), pos.x, diam=3, exact=False)
+            
+            print(cuerpo)
+            cuerpos.append(cuerpo)
+            
+        print(cuerpos)
+        return cuerpos
+    def __str__(self):
+        return f"Anillo(tag = '{self.tag}', distancia min = '{self.distancia_min}', distancia max = '{self.distancia_max}', masa de los cuerpos = '{self.masa}', cantida = '{self.cantidad}')"
+
+def simular_aproximados(todos):
+    for i, pos in enumerate(todos):
+        centro_de_masas = pos.centro_de_masa()
+        este = Cuerpo(str(pos.posicion), centro_de_masas, Vector2(0,0), pos.masa)
+        
+        cantidad = len(pos.valor)
+        for otro in todos_los_cuerpos:
+            fuerza = universo.fisica.gravedad(este, otro)
+            f_real = fuerza * -1 / cantidad
+            
+            for cuerpo in pos.valor:
+                cuerpo.aplicar_fuerza(f_real,delta_time)
+                # cuerpo.aplicar_fuerza(fuerza * -1,delta_time)
+        # if print_:
+        #     print(cantidad)
+                
+        for cuerpo in pos.valor:
+            cuerpo.constante(delta_time)
 
 # -------------------- funcion para pedir datos --------------------------
 def pedir_dato(nombre_del_dato, tipo_de_dato, close = "exit", pass_command = False): # los tipos de datos van 0 = int; 1 = float; 2 = vector; 3 = string; 4 = Decimal; 5 = vector Decimal
@@ -247,12 +363,12 @@ def crear_cuerpo():
             if masa > 0: # si la masa es mayor a 0
                 
                 # perdir la posicion 
-                posicion = pedir_dato("posicion", tipo_de_dato=2)
+                posicion = pedir_dato("posicion", tipo_de_dato=5)
                 
                 if posicion != False and posicion != None: # si el dato tiene un valor
                     
                     # pedir la velocidad
-                    velocidad = pedir_dato("velocidad", tipo_de_dato=2)
+                    velocidad = pedir_dato("velocidad", tipo_de_dato=5)
                     
                     if velocidad != False and velocidad != None: # si el dato tiene un valor
                         
@@ -270,6 +386,73 @@ def crear_cuerpo():
                 # indicar el error
                 print_error(tipos_de_errores[2], mensaje_extra="no se puede tener una masa negativa")
                 # print("\x1b[1;31merror de input (no se puede tener una masa negativa){c["default"]}")
+
+# ------------ funcion para crear un cuerpo ----------------------------------------
+def crear_anillo(cuerpo_que_orbita):
+    # pedir el nombre
+    cantidad = pedir_dato("Cantidad de cuerpos", tipo_de_dato=0)
+
+    if cantidad != False and cantidad != None: # si el dato tiene un valor
+        
+        # pedir la masa
+        masa = pedir_dato("Masa de los cuerpos", tipo_de_dato=4)
+        
+        if masa != False and masa != None: # si el dato tiene un valor
+            
+            if masa > 0: # si la masa es mayor a 0
+                
+                # perdir la posicion 
+                distancia_min = pedir_dato("Distancia minima", tipo_de_dato=1)
+                
+                if distancia_min != False and distancia_min != None: # si el dato tiene un valor
+                    if distancia_min > 0: # si la masa es mayor a 0
+                    
+                        # pedir la velocidad
+                        distancia_max = pedir_dato("Distancia maxima", tipo_de_dato=1)
+                        
+                        if distancia_max != False and distancia_max != None: # si el dato tiene un valor   
+                            if distancia_max > distancia_min: # si la masa es mayor a 0
+                                return Anillo(cuerpo_que_orbita, distancia_min,distancia_max,cantidad,masa)
+                                
+                            else: # si la distancia minima es menor a 0
+                                # indicar el error
+                                print_error(tipos_de_errores[2], mensaje_extra="La distancia maxima no puede ser menor a la minima")
+                                # print("\x1b[1;31merror de input (no se puede tener una masa negativa){c["default"]}")
+                    else: # si la distancia minima es menor a 0
+                        # indicar el error
+                        print_error(tipos_de_errores[2], mensaje_extra="no se puede tener una distancia negativa")
+                        # print("\x1b[1;31merror de input (no se puede tener una masa negativa){c["default"]}")
+            else: # si la masa es menor a 0
+                # indicar el error
+                print_error(tipos_de_errores[2], mensaje_extra="no se puede tener una masa negativa")
+                # print("\x1b[1;31merror de input (no se puede tener una masa negativa){c["default"]}")
+
+# load solar_sistem.json
+# size view 100e11;100e11
+# time.mode uniform 500
+# rings add to Saturno
+# 300
+# 154000000000000000
+# 73000000
+# 200000000
+# solar_sistem asteroid_belt 250
+# solar_sistem kuiper_belt 600
+# solar_sistem asteroids 50
+# run
+
+# add
+# a
+# 10
+# 0;0
+# 0;0
+# 10
+# rings add to a
+# 500
+# 1
+# 5
+# 10
+# time.mode uniform 2
+# run
 
 # Constante de gravitacion universal
 g = Decimal('0.01')
@@ -292,13 +475,22 @@ ciclos = 1
 
 # ------------ crear cuerpos -------------------------
 todos_los_cuerpos = list()
-todos_los_aproximados = list()
+todos_los_aproximados_hh = list()
+todos_los_aproximados_h = list()
+todos_los_aproximados_m = list()
+todos_los_aproximados_l = list()
 
+# ------------ asteroides -------------------------
 cantidad_de_asteroides_0 = 0
 cantidad_de_asteroides_1 = 0
 cantidad_de_asteroides_2 = 0
 
+# ------------ anillos -------------------------
+todos_los_anillos = list()
+
 sigue = True
+print(f'''{c["azul"]}Este es el bucle de inicialiciacion de datos. Para obtener la informacion de los comandos escriba "help"
+o visite https://github.com/pianistandcats/gravitational-model para mas informacion{c["default"]}''')
 # ----------- bucle de personalizacion del usuario -----------------------
 while sigue:
     # pedir input al usuario
@@ -321,8 +513,8 @@ while sigue:
     = igualar a (valor siguiente a \"=\")
 {c["amarillo"]}run:{c["default"]} empezar simulacion
 {c["amarillo"]}cuerpos:{c["default"]} datos de los cuerpos
-{c["amarillo"]}load:{c["default"]} cargar un archivo: load [nombre_del_archivo.json]
-{c["amarillo"]}save:{c["default"]} guardar datos de los cuerpos: save [nombre_del_archivo.json]
+{c["amarillo"]}load:{c["default"]} cargar un archivo: load [nombre del archivo]
+{c["amarillo"]}save:{c["default"]} guardar datos de los cuerpos: save [nombre del archivo]
 {c["amarillo"]}time.mode:{c["default"]} asignar el tipo de tiempo que se va a usar
   - delta_time varia dependiendo de cuanto tarda entre frame y frame (automático)
   - uniform un valor constante cada frame
@@ -330,6 +522,7 @@ while sigue:
   - dots tamaño automático de los cuerpos
   - view tamaño de visión
 {c["amarillo"]}active_save:{c["default"]} Guarda los datos generados durante la simulación en un archivo .json
+{c["amarillo"]}rings:{c["default"]} datos de los anillos
   
   mas informacion en https://github.com/pianistandcats/gravitational-model""")
         
@@ -587,21 +780,66 @@ si decea cancelar este comando deje la casilla vacia{c["default"]}""")
             if cic != "":
                 active_save = True
                 ciclos = int(cic)
+        
+    # ~~~~~~~~~~~~~~~~~~~~ si dice "rings" ~~~~~~~~~~~~~~~~~~~~
+    elif input_separado[0] == "rings":
+        if len(input_separado) == 2:
+            if input_separado[1] == 'see':
+                if (len(todos_los_anillos) > 0):
+                    # iterar los cuerpos
+                    for i in todos_los_anillos:
+                        # mostrar datos
+                        print(f"{c["amarillo"]}{i.planeta}:{c["default"]} {i}")
+                else:
+                    # indicar que no hay datos
+                    print("todavía no hay ningun anillo")
+            
+        elif len(input_separado) == 3:
+            if input_separado[1] == 'delete':
+                cuerpo_encontrado = next((anillo for anillo in todos_los_anillos if anillo.tag == input_separado[2]), None)
+                if cuerpo_encontrado:
+                    print(f"{c['amarillo']}Se elimino el anillo: {n_anillo} en el cuerpo {cuerpo_encontrado.nombre} {c["default"]}")
+                    todos_los_anillos.remove(n_anillo)
+                    
+                else:
+                    print_error(tipos_de_errores[3], f"El anillo {input_separado[2]} no exite. Consulte con 'rings see'")
+        
+        elif len(input_separado) == 4:
+            if input_separado[1] == 'add' and  input_separado[2] == "to":
+                cuerpo_encontrado = next((cuerpo for cuerpo in todos_los_cuerpos if cuerpo.tag == input_separado[3] or cuerpo.nombre == input_separado[3]), None)
+                
+                if cuerpo_encontrado:
+                    n_anillo = crear_anillo(cuerpo_encontrado)
+                    if n_anillo != None:
+                        todos_los_anillos.append(n_anillo)
+                        print(f"{c['amarillo']}Se creo el anillo: {n_anillo} en el cuerpo {cuerpo_encontrado.nombre} {c["default"]}")
+                    
+                else:
+                    print_error(tipos_de_errores[3], f"El cuerpo {input_separado[3]} no exite. Consulte con 'cuerpos see'")
             else:
-                active_save = False
+                print_error(tipos_de_errores[1], "La sintaxis deve ser: \"ring add to {(tag / nombre) del cuerpo}\"")
         else:
-            active_save = False
+            print_error(tipos_de_errores[1], "La sintaxis deve ser: \"ring {add to / see / delete}\"")
+        
 
     else:
         # indicar un error al no ser un comando valido
         print_error(f"\"{input_del_usuario}\"", mensaje_extra="no es un comando valido. Para ayuda escriba: help")
 
-grid = Grid(300,300, view_scale.x)
+grid_hh = Grid(4000,4000, view_scale.x/200)
+grid_h = Grid(250,250, view_scale.x)
+grid_m = Grid(50,50, view_scale.x)
+grid_l = Grid(10,10, view_scale.x)
 
 fisica = Fisica(g)
-universo = Universo(fisica,grid)
+universo = Universo(fisica,grid_h, grid_m, grid_l, grid_hh)
 
 # <- colocar funciones de generacion de cuerpos aqui
+for i in todos_los_anillos:
+    cuerpos = i.crear_cuerpos_anillo()
+    todos_los_aproximados_hh.extend(cuerpos)
+
+print(todos_los_aproximados_hh)
 
 # ---------- crear asteroides aleatorios en todo el sistema solar ---------- 
 for i in range(cantidad_de_asteroides_0):
@@ -616,7 +854,7 @@ for i in range(cantidad_de_asteroides_0):
     n_velocidad.y = M_velocidad * Decimal(sin(ang + 1.57079632679))
     
     cuerpo = Cuerpo(str(i), n_posicion, n_velocidad, Decimal(2.8e21), 3, exact=False)
-    todos_los_aproximados.append(cuerpo)
+    todos_los_aproximados_l.append(cuerpo)
 
 # ---------- crear asteroides en el cinturon de asteroides ---------- 
 for i in range(cantidad_de_asteroides_1):
@@ -639,7 +877,7 @@ for i in range(cantidad_de_asteroides_1):
     # print(str(n_velocidad.magnitud()))
     
     cuerpo_nuevo = Cuerpo(str(i) + " Cinturon", n_posicion, n_velocidad, Decimal(2.8e21), diam=3, exact=False)
-    todos_los_aproximados.append(cuerpo_nuevo)
+    todos_los_aproximados_h.append(cuerpo_nuevo)
 
 # ---------- crear asteroides en el cinturon de kuiper ---------- 
 for i in range(cantidad_de_asteroides_2):
@@ -661,9 +899,11 @@ for i in range(cantidad_de_asteroides_2):
     # print(str(n_velocidad.magnitud()))
     
     cuerpo_nuevo = Cuerpo(str(i) + " Cinturon", n_posicion, n_velocidad, Decimal(2.8e21), diam=3, exact=False)
-    todos_los_aproximados.append(cuerpo_nuevo)
+    todos_los_aproximados_l.append(cuerpo_nuevo)
 
-universo.grid.actualizar(todos_los_aproximados)
+universo.grid_h.actualizar(todos_los_aproximados_h)
+universo.grid_m.actualizar(todos_los_aproximados_m)
+universo.grid_l.actualizar(todos_los_aproximados_l)
 
 # Uso de la clase para tener la ventana
 puntos = Puntos()
@@ -671,7 +911,10 @@ puntos = Puntos()
 # Agregar los puntos para cada cuerpo
 puntos.agregar_cuerpos(todos_los_cuerpos)
 
-puntos.agregar_cuerpos(todos_los_aproximados)
+puntos.agregar_cuerpos(todos_los_aproximados_hh)
+puntos.agregar_cuerpos(todos_los_aproximados_h)
+puntos.agregar_cuerpos(todos_los_aproximados_m)
+puntos.agregar_cuerpos(todos_los_aproximados_l)
 
 for i in puntos.cuerpos:
     print(i.nombre)
@@ -686,8 +929,8 @@ UPT = time.perf_counter()
 tiempo_inicial = time.perf_counter()
 tiempo_transcurrido = 0 
 
-# ---------------- empezando el bucle infinito ---------------------------
 ciclos_transcurridos = 0
+# ---------------- empezando el bucle infinito ---------------------------
 while True:
     # verificar el modo de tiempo que se esta usando
     if time_mode == True:
@@ -698,9 +941,10 @@ while True:
         # crear el delta time (tiempo que tarda en hacer un frame)
         # haciendo la diferencia entre el tiempo actual y el del frame anterior
         delta_time = current_time - last_time
+        delta_time *= puntos.multiplicador_de_tiempo
     else:
         # ~~~~~~~~~~~~~~~~~~~ usar un valor fijo ~~~~~~~~~~~~~~~~~~~~
-        delta_time = uniform_time
+        delta_time = uniform_time * puntos.multiplicador_de_tiempo
     
     CPT = time.perf_counter()
     DTPT = CPT - UPT
@@ -713,35 +957,35 @@ while True:
     
     
     # iterar la lista de aproximados
-    todos = universo.grid.get_all()
-    for i, pos in enumerate(todos):
-        centro_de_masas = pos.centro_de_masa()
-        este = Cuerpo(str(pos.posicion), centro_de_masas, Vector2(0,0), pos.masa)
-        # for otras_pos in todos[i+1:]:
-        #     otro = Cuerpo(str(otras_pos.posicion), otras_pos.posicion * universo.grid.tamaño, Vector2(0,0), otras_pos.masa)
-        #     fuerza = universo.fisica.gravedad(este, otro)
-            
-        #     for cuerpo in pos.valor:
-        #         cuerpo.aplicar_fuerza(fuerza * -1,delta_time)
-            
-        #     for cuerpo in otras_pos.valor:
-        #         cuerpo.aplicar_fuerza(fuerza,delta_time)
-        
-        for otro in todos_los_cuerpos:
-            fuerza = universo.fisica.gravedad(este, otro)
-            
-            for cuerpo in pos.valor:
-                cuerpo.aplicar_fuerza(fuerza * -1 ,delta_time)
-        
-        for cuerpo in pos.valor:
-            cuerpo.constante(delta_time)
+    todos = universo.grid_h.get_all()
+    simular_aproximados(todos)
+      
+    # iterar la lista de aproximados
+    todos = universo.grid_m.get_all()
+    simular_aproximados(todos)
+    
+    # iterar la lista de aproximados
+    todos = universo.grid_l.get_all()
+    simular_aproximados(todos)
+    
+    
+    universo.grid_h.actualizar(todos_los_aproximados_hh)
+    universo.grid_h.actualizar(todos_los_aproximados_h)
+    universo.grid_m.actualizar(todos_los_aproximados_m)
+    universo.grid_l.actualizar(todos_los_aproximados_l)
+
     
     # ~~~~~~~~~~~~~~~ calcular la inercia 9de cada objeto ~~~~~~~~~~~~~~~~~~~~~~
     # iterar la lista de todos los cuerpos
     for i in todos_los_cuerpos:
         # realizar su funcion constante
         i.constante(delta_time)
-        
+    
+    # iterar la lista de aproximados
+    for cuerpo in todos_los_aproximados_hh:
+        cuerpo.posicion = fisica.posicion_orbital(cuerpo, tiempo_transcurrido) + cuerpo.cuerpo_que_orbita.posicion
+    
+    
     tiempo_transcurrido += delta_time
     
     # actualizar el grafico
@@ -774,3 +1018,4 @@ if active_save == True:
     with open(save_in, 'w') as archivo:
         # se añaden los datos
         json.dump(datos, archivo, indent=4)
+    
