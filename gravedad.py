@@ -12,6 +12,7 @@ import json
 import os
 import sys
 import ctypes
+import numpy as np
 from decimal import Decimal, getcontext
 
 # habilitar el soporte de colores ANSI en la consola de Windows
@@ -57,11 +58,13 @@ class Fisica:
     
     # ------------- Kepler
     def período_orbital(self, masa, semieje_mayor):
-        T = 2*math.pi * (math.sqrt((semieje_mayor ** 3) / float((self.g * masa))))
+        # print(semieje_mayor)
+        T = 2*math.pi * (math.sqrt((float(semieje_mayor) ** 3) / float((self.g * masa))))
         return T
     
     def anomalía_media(self, masa, semieje_mayor, tiempo):
-        M = ((2*math.pi) / self.período_orbital(masa, semieje_mayor)) * tiempo
+        T = self.período_orbital(masa, semieje_mayor)
+        M = ((2 * math.pi) / T) * tiempo
         return M
     
     def resolver_kepler(self, M, e, tol=1e-6):
@@ -75,23 +78,152 @@ class Fisica:
     
     def anomalia_verdadera(self, E, excentricidad):
         tan_nu_2 = math.sqrt((1 + excentricidad) / (1 - excentricidad)) * math.tan(E / 2)
-        nu = 2 * math.atan(tan_nu_2)
+        nu = 2 * math.atan(tan_nu_2) 
         return nu
-    
-    def posicion_orbital(self,cuerpo, tiempo):
+
+    def posicion_orbital_simple(self,cuerpo, tiempo):
         masa = cuerpo.cuerpo_que_orbita.masa
         semieje_mayor = cuerpo.semieje_mayor
-        exentricidad = cuerpo.exentricidad
+        excentricidad = cuerpo.excentricidad
         
         M = self.anomalía_media(masa, semieje_mayor, tiempo)
-        E = self.resolver_kepler(M, exentricidad)
-        r = Decimal(semieje_mayor) * Decimal((1 - exentricidad * math.cos(E)))
-        angulo = self.anomalia_verdadera(E, exentricidad)
+        E = self.resolver_kepler(M, excentricidad)
+        r = Decimal(semieje_mayor) * Decimal((1 - excentricidad * math.cos(E)))
+        angulo = self.anomalia_verdadera(E, excentricidad)
         
         x = Decimal(r * Decimal(math.cos(angulo + cuerpo.velocidad.y)))
         y = Decimal(r * Decimal(math.sin(angulo + cuerpo.velocidad.y)))
         return Vector2(x,y)
+#     load solar_sistem.json
+# size view 100e11;100e11
+# time.mode uniform 500
+# rings add to Saturno
+# 300
+# 154000000000000000
+# 73000000
+# 200000000
+# solar_sistem asteroid_belt 250
+# solar_sistem kuiper_belt 600
+# solar_sistem asteroids 50
+# run
 
+# load solar_sistem.json
+# size view 100e11;100e11
+# time.mode uniform 50000
+# run
+
+
+# add
+# a
+# 10
+# 0;0
+# 0;0
+# 100
+# G = 1
+# add moon a
+# luna
+# 1
+# 10;10
+# 0;1
+# add
+# b
+# 20
+# 20;-15
+# 0;01
+
+# run
+
+# time.mode uniform 0.05
+# add
+# a
+# 100
+# 0;0
+# 0;0
+# 100
+# G = 1
+# add moon a
+# luna
+# 1
+# 30;10
+# 0;1.5
+# add
+# b
+# 8
+# 30;-15
+# 0;01
+
+# run
+
+    def posicion_orbital_completa(self, cuerpo, tiempo):
+        masa = cuerpo.cuerpo_que_orbita.masa
+        semieje_mayor = cuerpo.semieje_mayor
+        excentricidad_vectorial = cuerpo.excentricidad  # Ahora es un vector
+        e_magnitud = np.linalg.norm(excentricidad_vectorial)  # Magnitud de la excentricidad
+        periapsis_direccion = excentricidad_vectorial / e_magnitud  # Vector unitario hacia el periapsis
+        mu = self.g * masa  # Parámetro gravitacional estándar
+        
+        # Anomalía media
+        M = self.anomalía_media(masa, semieje_mayor, tiempo)
+        
+        # Ecuación de Kepler
+        E = self.resolver_kepler(M, e_magnitud)
+        
+        # Anomalía verdadera
+        nu = self.anomalia_verdadera(E, e_magnitud)
+        
+        # Semilatus rectum
+        p = semieje_mayor * (1 - e_magnitud ** 2)
+        
+        # Distancia radial
+        r = p / (1 + e_magnitud * math.cos(nu))
+        
+        # Coordenadas en el plano orbital
+        x_orb = r * math.cos(nu)
+        y_orb = r * math.sin(nu)
+        
+        # Rotación al sistema global
+        # Ángulo de rotación basado en la dirección del periapsis
+        rotacion = np.array([[periapsis_direccion[0], -periapsis_direccion[1]],
+                            [periapsis_direccion[1], periapsis_direccion[0]]])
+        
+        # Posición global
+        posicion_global = np.dot(-rotacion, np.array([x_orb, y_orb]))
+        
+        return Vector2(Decimal(posicion_global[0]), Decimal(posicion_global[1]))
+    def posicion_y_velocidad_relativas(self, planeta, luna):
+        pos = np.array([float(planeta.posicion.x - luna.posicion.x), float(planeta.posicion.y - luna.posicion.y), 0])
+        vel = np.array([float(planeta.velocidad.x - luna.velocidad.x), float(planeta.velocidad.y - luna.velocidad.y), 0])
+        return pos, vel
+    def pgr(self, luna, planeta):
+        return float(self.g * (luna.masa + planeta.masa))
+    def momento_angular(self, posicion, velocidad):
+        return np.cross(posicion, velocidad)
+    def excentricidad(self, velocidad, posicion, momento_angular, pgr):
+        # e = (np.cross(velocidad, np.cross(posicion, velocidad))/pgr) - posicion / np.linalg.norm(posicion)
+        p = (np.cross(velocidad, momento_angular)) - pgr * ( posicion / np.linalg.norm(posicion) )
+        e = (1 / pgr) * p 
+        print(f"e = {e}")
+        return e
+    def energia_especifica(self, velocidad, posicion, pgr):
+        ee = ((np.linalg.norm(velocidad) ** 2) / 2) - pgr / np.linalg.norm(posicion)
+        return ee
+    def semieje_mayor(self,energia_especifica,pgr):
+        a = - (pgr /(2*energia_especifica))
+        return a
+    def velocidad_en_orbita(self,exentricidad, semieje_mayor, pgr):
+        pass
+        # velocidad = math.sqrt(pgr*((2/distancia)*(1/semieje_mayor)))
+        # v_tag = velocidad * 
+        # ang = math.atan2(posicion[1], posicion[0])
+        # dot_product = np.dot(posicion, velocidad)
+        
+        # ang2 = np.arccos(dot_product/(np.linalg.norm(posicion)*np.linalg.norm(velocidad)))
+        # p = math.sqrt(pgr*(2 / np.linalg.norm(posicion) -1 / semieje_mayor))
+        # v_r = p * math.cos(ang2)
+        # v_t = p * math.sin(ang2)
+        # v_x = v_r * math.cos(ang) - v_t * math.sin(ang)
+        # v_y = v_r * math.sin(ang) - v_t * math.cos(ang)
+        # return np.array([v_x, v_y])
 
 # ---------------------- Crear la clase Cuerpo ----------------------------
 class Cuerpo:
@@ -142,11 +274,55 @@ class Cuerpo:
         self.guardar_pos()
 
 class Cuerpo_anillo(Cuerpo):
-    def __init__(self, nombre, posicion, velocidad, masa, orbita, exentricidad, semieje_mayor, diam=None, exact=True):
+    def __init__(self, nombre, posicion, velocidad, masa, orbita, excentricidad, semieje_mayor, diam=None, exact=True):
         super().__init__(nombre, posicion, velocidad, masa, diam, exact)
         self.cuerpo_que_orbita = orbita
-        self.exentricidad = exentricidad
+        self.excentricidad = excentricidad
         self.semieje_mayor = semieje_mayor
+
+class Cuerpo_luna(Cuerpo):
+    def __init__(self, nombre, posicion, velocidad, masa, cuerpo_que_orbita, diam=None, exact=True):
+        super().__init__(nombre, posicion, velocidad, masa, diam, exact)
+        self.cuerpo_que_orbita = cuerpo_que_orbita
+        self.semieje_mayor = None
+        self.excentricidad = None
+        self.posicion_inicial = posicion
+        self.posicion_relativa_a_orbita = Vector2(0,0)
+        self.velocidad_relativa_a_orbita = Vector2(0,0)
+    
+    def calcular_orbita(self, fisica):
+        posicion, velocidad = fisica.posicion_y_velocidad_relativas(self.cuerpo_que_orbita, self)
+        pgr = fisica.pgr(self, self.cuerpo_que_orbita)
+        energia_especifica = fisica.energia_especifica(velocidad, posicion,pgr)
+        momento = fisica.momento_angular(posicion, velocidad)
+        self.semieje_mayor = fisica.semieje_mayor(energia_especifica, pgr)
+        
+        # self.exentricidad = np.linalg.norm(fisica.excentricidad(velocidad,posicion, momento, pgr))
+        self.excentricidad = fisica.excentricidad(velocidad,posicion, momento, pgr)
+    # funcion para aplicar una fuerza
+    def aplicar_fuerza(self, fuerza_aplicada, tiempo):
+        # aplicar la formula F = ma
+        velocidad_r = universo.fisica.calcular_aceleracion(fuerza_aplicada, self.masa, tiempo)
+        # sumar la velocidad
+        self.velocidad_relativa_a_orbita += velocidad_r
+    # funcion para aplicar la gravedad
+    def aplicar_gravedad(self, otro, delta_time, doble):
+        # calcular la gravedad
+        fuerza = universo.fisica.gravedad(self, otro)
+        
+        # aplicar la fuerza obtenida a el mismo
+        self.aplicar_fuerza(Vector2(fuerza.x, fuerza.y) * -1, delta_time)
+        
+        if doble:
+            # aplicar la fuerza obtenida al otro
+            otro.aplicar_fuerza(Vector2(fuerza.x, fuerza.y), delta_time)
+            
+        
+    def constante(self, delta_time):
+        # mover lo que indica la velocidad que tiene multiplicado por el tiempo que tarda cada frame
+        self.posicion_relativa_a_orbita += self.velocidad_relativa_a_orbita * delta_time
+        self.posicion = self.posicion_inicial + self.posicion_relativa_a_orbita
+        self.guardar_pos()
 
 # -------------------- Clase para visualizar los puntos --------------------------------
 class Puntos:
@@ -387,7 +563,7 @@ def crear_cuerpo():
                 print_error(tipos_de_errores[2], mensaje_extra="no se puede tener una masa negativa")
                 # print("\x1b[1;31merror de input (no se puede tener una masa negativa){c["default"]}")
 
-# ------------ funcion para crear un cuerpo ----------------------------------------
+# ------------ funcion para crear un anillo ----------------------------------------
 def crear_anillo(cuerpo_que_orbita):
     # pedir el nombre
     cantidad = pedir_dato("Cantidad de cuerpos", tipo_de_dato=0)
@@ -427,32 +603,36 @@ def crear_anillo(cuerpo_que_orbita):
                 print_error(tipos_de_errores[2], mensaje_extra="no se puede tener una masa negativa")
                 # print("\x1b[1;31merror de input (no se puede tener una masa negativa){c["default"]}")
 
-# load solar_sistem.json
-# size view 100e11;100e11
-# time.mode uniform 500
-# rings add to Saturno
-# 300
-# 154000000000000000
-# 73000000
-# 200000000
-# solar_sistem asteroid_belt 250
-# solar_sistem kuiper_belt 600
-# solar_sistem asteroids 50
-# run
+# ------------ funcion para crear un anillo ----------------------------------------
+def crear_luna(cuerpo_que_orbita):
+    # pedir el nombre
+    nombre = pedir_dato("Nombre", tipo_de_dato=3)
 
-# add
-# a
-# 10
-# 0;0
-# 0;0
-# 10
-# rings add to a
-# 500
-# 1
-# 5
-# 10
-# time.mode uniform 2
-# run
+    if nombre != False and nombre != None: # si el dato tiene un valor
+        
+        # pedir la masa
+        masa = pedir_dato("Masa", tipo_de_dato=4)
+        
+        if masa != False and masa != None: # si el dato tiene un valor
+            
+            if masa > 0: # si la masa es mayor a 0
+                
+                # perdir la posicion 
+                posicion = pedir_dato("Posicion Relativa", tipo_de_dato=5)
+                
+                if posicion != False and posicion != None: # si el dato tiene un valor
+                    # pedir la velocidad
+                    velocidad = pedir_dato("Velocidad Relativa", tipo_de_dato=5)
+                        
+                    if velocidad != False and velocidad != None: # si el dato tiene un valor   
+                        return Cuerpo_luna(nombre, posicion + cuerpo_que_orbita.posicion, velocidad + cuerpo_que_orbita.velocidad, masa, cuerpo_que_orbita)
+                        # return Cuerpo(nombre, posicion, velocidad, masa)
+                                
+            else: # si la masa es menor a 0
+                # indicar el error
+                print_error(tipos_de_errores[2], mensaje_extra="no se puede tener una masa negativa")
+                # print("\x1b[1;31merror de input (no se puede tener una masa negativa){c["default"]}")
+
 
 # Constante de gravitacion universal
 g = Decimal('0.01')
@@ -528,11 +708,22 @@ while sigue:
         
     # ~~~~~~~~~~~~~~~~~~~~ si dice "add" ~~~~~~~~~~~~~~~~~~~~
     elif input_separado[0] == "add":
-        # crear un cuerpo
-        crear_cuerpo()
-        # dejar un espacio
-        print("\n")
-    
+        if len(input_separado) == 1:
+            # crear un cuerpo
+            crear_cuerpo()
+            # dejar un espacio
+            print("\n")
+        elif len(input_separado) == 3:
+            if input_separado[1] == "moon":
+                cuerpo_encontrado = next((cuerpo for cuerpo in todos_los_cuerpos if cuerpo.tag == input_separado[2] or cuerpo.nombre == input_separado[2]), None)
+                if cuerpo_encontrado:
+                    luna = crear_luna(cuerpo_encontrado)
+                    if luna != None:
+                        todos_los_aproximados_m.append(luna)
+                        # todos_los_cuerpos.append(luna)
+                        print(f"{c['amarillo']}Se creo la luna: {luna} en el cuerpo {cuerpo_encontrado.nombre} {c["default"]}")
+            
+        
     # ~~~~~~~~~~~~~~~~~~~~ si dice "G" ~~~~~~~~~~~~~~~~~~~~
     elif input_separado[0] == "G":
         # -- si tiene 1 palabra --
@@ -645,6 +836,47 @@ while sigue:
                     # mostrar el cuerpo que se añadio
                     print(f"{c["amarillo"]}Se añadio {cuerpo_cargado.nombre} (tag: {cuerpo_cargado.tag}){c["default"]}")
                 
+                if "lunas" in DCLD and isinstance(DCLD["lunas"], list):
+                    for dato in DCLD["lunas"]:
+                        # guardar los datos de la posicion 
+                        n_posicion = Vector2(Decimal(dato["posicion"]["x"]), Decimal(dato["posicion"]["y"]))
+                        # guardar los datos de la velocidad
+                        n_velocidad = Vector2(Decimal(dato["velocidad"]["x"]), Decimal(dato["velocidad"]["y"]))
+                        # guardar datos del planeta
+                        planeta = next((cuerpo for cuerpo in todos_los_cuerpos if cuerpo.tag == dato["cuerpo central"] or cuerpo.nombre == dato["cuerpo central"]), None)
+                        
+                        # crear el cuerpo usando el nombre, la posicon, la velocidad y la masa que indica el archivo
+                        cuerpo_cargado = Cuerpo_luna(dato["nombre"],n_posicion,n_velocidad,Decimal(dato["masa"]),planeta, float(dato["diametro"]))
+                        
+                        # se agrega el cuerpo a las listas que contienen los cuerpos
+                        todos_los_aproximados_m.append(cuerpo_cargado)
+                        objetos_agregados.append(cuerpo_cargado)
+                        
+                        # mostrar el cuerpo que se añadio
+                        print(f"{c["amarillo"]}Se añadio la luna: {cuerpo_cargado.nombre} al cuerpo: {dato["cuerpo central"]} (tag: {cuerpo_cargado.tag}){c["default"]}")
+                else:
+                    print_error("el archivo no contiene la lista \"lunas\"")
+                    
+                if "anillos" in DCLD and isinstance(DCLD["anillos"], list):
+                    for dato in DCLD["anillos"]:
+                        # guardar los datos de la posicion 
+                        distancia_min = datos["distancia"]["min"]
+                        distancia_max = datos["distancia"]["max"]
+                        planeta = next((cuerpo for cuerpo in todos_los_cuerpos if cuerpo.tag == dato["planeta"] or cuerpo.nombre == dato["planeta"]), None)
+                        cantidad_de_asteroides = datos["cantidad de cuerpos"]
+                        masa = datos["masa"]
+                        
+                        # crear el cuerpo usando el nombre, la posicon, la velocidad y la masa que indica el archivo
+                        cuerpo_cargado = Anillo(planeta,distancia_min,distancia_max, cantidad_de_asteroides, masa)
+                        
+                        # se agrega el cuerpo a las listas que contienen los cuerpos
+                        todos_los_anillos.append(cuerpo_cargado)
+                        
+                        # mostrar el cuerpo que se añadio
+                        print(f"{c["amarillo"]}Se añadio un anillo a {dato["planeta"]} (tag: {cuerpo_cargado.tag}){c["default"]}")
+                else:
+                    print_error("el archivo no contiene la lista \"anillos\"")
+                    
                 # mostrar el numero de cuerpos que se añadieron
                 print(f"se añadieron {len(objetos_agregados)} cuerpos")
                 
@@ -653,6 +885,24 @@ while sigue:
                     g = Decimal(DCLD["G"])
                     print(f"{c["verde"]}Se actualizo el valor de G{c["default"]}")
                     print(f"{c["verde"]}Nuevo valor de G es: {g}{c["default"]}")
+                    
+                if "asteroides" in DCLD and isinstance(DCLD["asteroides"], int):
+                    cantidad_de_asteroides_0 = DCLD["asteroides"]
+                    print(f"{c["verde"]}Nueva cantidad de asteroides es: {cantidad_de_asteroides_0}{c["default"]}")
+                else:
+                    print_error("el archivo no contiene el valor \"asteroides\"")
+                    
+                if "cinturon" in DCLD and isinstance(DCLD["cinturon"], int):
+                    cantidad_de_asteroides_1 = DCLD["cinturon"]
+                    print(f"{c["verde"]}Nueva cantidad de asteroides en el cinturon es: {cantidad_de_asteroides_1}{c["default"]}")
+                else:
+                    print_error("el archivo no contiene el valor \"cinturon\"")
+                    
+                if "kuiper" in DCLD and isinstance(DCLD["kuiper"], int):
+                    cantidad_de_asteroides_2 = DCLD["kuiper"]
+                    print(f"{c["verde"]}Nueva cantidad de asteroides en el cinturon de kuiper es: {cantidad_de_asteroides_2}{c["default"]}")
+                else:
+                    print_error("el archivo no contiene el valor \"kuiper\"")
                 
             else:
                 print_error(tipos_de_errores[3], "el archivo dado no existe")
@@ -664,11 +914,15 @@ while sigue:
         # -- si la cantidad de palabras es igual a 2 --
         if len(input_separado) == 2:
             # se crea la variable con los datos
-            datos = crear_archivo_json(todos_los_cuerpos, g)
+            datos = crear_archivo_json(todos_los_cuerpos, todos_los_aproximados_m, todos_los_anillos, cantidad_de_asteroides_0, cantidad_de_asteroides_1, cantidad_de_asteroides_2, g)
             # se crea el archivo
-            with open(input_separado[1], 'w') as archivo:
+            sitio = input_separado[1]
+            if input_separado[1].endswith(".json") != True:
+                sitio += ".json"
+            with open(sitio, 'w') as archivo:
                 # se añaden los datos
                 json.dump(datos, archivo, indent=4)
+            print(f"{c["verde"]}se guardaron los datos en {sitio}{c["default"]}")
         else:
             print_error(tipos_de_errores[1])
     
@@ -821,7 +1075,6 @@ si decea cancelar este comando deje la casilla vacia{c["default"]}""")
         else:
             print_error(tipos_de_errores[1], "La sintaxis deve ser: \"ring {add to / see / delete}\"")
         
-
     else:
         # indicar un error al no ser un comando valido
         print_error(f"\"{input_del_usuario}\"", mensaje_extra="no es un comando valido. Para ayuda escriba: help")
@@ -840,6 +1093,9 @@ for i in todos_los_anillos:
     todos_los_aproximados_hh.extend(cuerpos)
 
 print(todos_los_aproximados_hh)
+
+for i in todos_los_aproximados_m:
+    i.calcular_orbita(fisica)
 
 # ---------- crear asteroides aleatorios en todo el sistema solar ---------- 
 for i in range(cantidad_de_asteroides_0):
@@ -916,6 +1172,11 @@ puntos.agregar_cuerpos(todos_los_aproximados_h)
 puntos.agregar_cuerpos(todos_los_aproximados_m)
 puntos.agregar_cuerpos(todos_los_aproximados_l)
 
+# establecer posicion inicial de las lunas
+for cuerpo in todos_los_aproximados_m:
+    cuerpo.posicion = fisica.posicion_orbital_completa(cuerpo, 0) + cuerpo.cuerpo_que_orbita.posicion
+    cuerpo.posicion_inicial = fisica.posicion_orbital_completa(cuerpo, 0) + cuerpo.cuerpo_que_orbita.posicion
+
 for i in puntos.cuerpos:
     print(i.nombre)
 # iniciar la animacion
@@ -961,10 +1222,6 @@ while True:
     simular_aproximados(todos)
       
     # iterar la lista de aproximados
-    todos = universo.grid_m.get_all()
-    simular_aproximados(todos)
-    
-    # iterar la lista de aproximados
     todos = universo.grid_l.get_all()
     simular_aproximados(todos)
     
@@ -981,9 +1238,22 @@ while True:
         # realizar su funcion constante
         i.constante(delta_time)
     
+    for i, cuerpo in enumerate(todos_los_aproximados_m):
+        for j in todos_los_cuerpos:
+            if cuerpo.cuerpo_que_orbita != j:
+                cuerpo.aplicar_gravedad(j, delta_time, False)
+                
+        for j in todos_los_aproximados_m[i+1:]:
+            cuerpo.aplicar_gravedad(j, delta_time, True)
+        cuerpo.posicion = fisica.posicion_orbital_completa(cuerpo, tiempo_transcurrido) + cuerpo.cuerpo_que_orbita.posicion
+        
+            
+        cuerpo.constante(delta_time)
+        
+    
     # iterar la lista de aproximados
     for cuerpo in todos_los_aproximados_hh:
-        cuerpo.posicion = fisica.posicion_orbital(cuerpo, tiempo_transcurrido) + cuerpo.cuerpo_que_orbita.posicion
+        cuerpo.posicion = fisica.posicion_orbital_simple(cuerpo, tiempo_transcurrido) + cuerpo.cuerpo_que_orbita.posicion
     
     
     tiempo_transcurrido += delta_time

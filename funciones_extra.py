@@ -64,7 +64,7 @@ def print_error(tipo_de_error, mensaje_extra = ""):
     else:
         print(f"{c["rojo"]}{tipo_de_error}{c["default"]}")
 
-def crear_archivo_json(lista_de_cuerpos, gravitacion_universal):
+def crear_archivo_json(lista_de_cuerpos, lista_de_lunas, lista_de_anillos, c_de_asteroides, c_de_cinturon, c_de_kuiper, gravitacion_universal):
     cuerpos = []
     
     for item in lista_de_cuerpos:
@@ -80,12 +80,48 @@ def crear_archivo_json(lista_de_cuerpos, gravitacion_universal):
             },
             "masa": float(item.masa),
             "diametro": float(item.diametro)
-            
         }
         cuerpos.append(diccionario_para_un_cuerpo)
+        
     
+    lunas = []
+    for item in lista_de_lunas:
+        diccionario_para_una_luna = {
+            "nombre": item.nombre,
+            "cuerpo central": item.cuerpo_que_orbita.nombre,
+            "posicion relativa": {
+                "x": float(item.posicion.x),
+                "y": float(item.posicion.y)
+            },
+            "velocidad relativa": {
+                "x": float(item.velocidad.x),
+                "y": float(item.velocidad.y)
+            },
+            "masa": float(item.masa),
+            "diametro": float(item.diametro)
+        }
+        lunas.append(diccionario_para_una_luna)
+    
+    anillos = []
+    for item in lista_de_anillos:
+        diccionario_para_un_anillo = {
+            "planeta": item.planeta.nombre,
+            "distancia": {
+                "min": float(item.distancia_min),
+                "max": float(item.distancia_max)
+            },
+            "cantidad de cuerpos": item.cantidad,
+            "masa": float(item.masa),
+        }
+        anillos.append(diccionario_para_un_anillo)
+        
     archivo = {
         "cuerpos": cuerpos,
+        "lunas": lunas,
+        "anillos": anillos,
+        "asteroides": c_de_asteroides,
+        "cinturon": c_de_cinturon,
+        "kuiper": c_de_kuiper,
         "G": float(gravitacion_universal)
     }
     return archivo
