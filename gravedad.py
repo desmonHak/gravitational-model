@@ -94,65 +94,6 @@ class Fisica:
         x = Decimal(r * Decimal(math.cos(angulo + cuerpo.velocidad.y)))
         y = Decimal(r * Decimal(math.sin(angulo + cuerpo.velocidad.y)))
         return Vector2(x,y)
-#     load solar_sistem.json
-# size view 100e11;100e11
-# time.mode uniform 500
-# rings add to Saturno
-# 300
-# 154000000000000000
-# 73000000
-# 200000000
-# solar_sistem asteroid_belt 250
-# solar_sistem kuiper_belt 600
-# solar_sistem asteroids 50
-# run
-
-# load solar_sistem.json
-# size view 100e11;100e11
-# time.mode uniform 50000
-# run
-
-
-# add
-# a
-# 10
-# 0;0
-# 0;0
-# 100
-# G = 1
-# add moon a
-# luna
-# 1
-# 10;10
-# 0;1
-# add
-# b
-# 20
-# 20;-15
-# 0;01
-
-# run
-
-# time.mode uniform 0.05
-# add
-# a
-# 100
-# 0;0
-# 0;0
-# 100
-# G = 1
-# add moon a
-# luna
-# 1
-# 30;10
-# 0;1.5
-# add
-# b
-# 8
-# 30;-15
-# 0;01
-
-# run
 
     def posicion_orbital_completa(self, cuerpo, tiempo):
         masa = cuerpo.cuerpo_que_orbita.masa
@@ -688,6 +629,7 @@ while sigue:
     elif input_del_usuario == "help":
         # dar la informacion
         print(f"""{c["amarillo"]}add:{c["default"]} añadir un cuerpo
+ - add moon [nombre del cuerpo] agrega una luna al cuerpo 
 {c["amarillo"]}G:{c["default"]} constante de gravitacion universal
     ? muestra su valor actual
     = igualar a (valor siguiente a \"=\")
@@ -702,7 +644,7 @@ while sigue:
   - dots tamaño automático de los cuerpos
   - view tamaño de visión
 {c["amarillo"]}active_save:{c["default"]} Guarda los datos generados durante la simulación en un archivo .json
-{c["amarillo"]}rings:{c["default"]} datos de los anillos
+{c["amarillo"]}rings:{c["default"]} agregar y ver datos de los anillos
   
   mas informacion en https://github.com/pianistandcats/gravitational-model""")
         
