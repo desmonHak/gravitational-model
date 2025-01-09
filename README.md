@@ -25,9 +25,11 @@ En este programa puedes hacer simulaciones de gravedad en 2 dimensiones.
   
   - delta_time varia dependiendo de cuanto tarda entre frame y frame (automático)
   - uniform un valor constante cada frame
+
 **9. size:** valores de tamaños
   - dots tamaño automático de los cuerpos
   - view tamaño de visión
+  
 **10. solar_sistem:** contiene algunos datos especificos del sistema solar:
 
   - asteroid_belt cantidad de asteroides en el cinturon
