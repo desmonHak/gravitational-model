@@ -7,6 +7,7 @@ En este programa puedes hacer simulaciones de gravedad en 2 dimensiones.
 **1. help:** Ver todas las acciones posibles
 
 **2. add:** añadir un cuerpo
+- add moon [nombre del cuerpo] agrega una luna al cuerpo 
 
 **3. G:** constante de gravitación universal
 	
@@ -37,6 +38,8 @@ En este programa puedes hacer simulaciones de gravedad en 2 dimensiones.
 Para asignación de vectores 2 se escribe x;y separando los valores con un punto y coma
 
 ej: 5;8 indica la posición 5 en X, 8 en Y
+
+**11. rings:** Agregar y ver datos de los anillos
 
 ## Recomendaciones:
 - Se pueden crear funciones dentro del código gravedad.py que creen muchos cuerpos de forma automática (preferentemente justo después del bucle de personalización del usuario)
