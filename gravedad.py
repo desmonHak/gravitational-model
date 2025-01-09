@@ -315,16 +315,18 @@ class Puntos:
         if event.key == 'escape':  # Si se presiona la tecla ESC
             exit()
         elif event.key == '+':  # Mover hacia la izquierda
-            if self.multiplicador_de_tiempo < 800:
+            if self.multiplicador_de_tiempo < 5:
                 self.multiplicador_de_tiempo *= move_factor
+                if self.multiplicador_de_tiempo == 0:
+                    self.multiplicador_de_tiempo = 0.001
             else:
-                self.multiplicador_de_tiempo = 800
+                self.multiplicador_de_tiempo = 5
                 print("--------------------------------- tiempo maximo -------------------------------")
         elif event.key == '-':  # Mover hacia la derecha
-            if self.multiplicador_de_tiempo > 0.01:
+            if self.multiplicador_de_tiempo > 0.001:
                 self.multiplicador_de_tiempo /= move_factor
             else:
-                self.multiplicador_de_tiempo = 0.01
+                self.multiplicador_de_tiempo = 0
                 print("--------------------------------- tiempo minimo -------------------------------")
                 
     # agregar varios cuerpos
@@ -643,6 +645,10 @@ while sigue:
 {c["amarillo"]}size:{c["default"]} valores de tamaños
   - dots tamaño automático de los cuerpos
   - view tamaño de visión
+{c["amarillo"]}solar_sistem:{c["default"]} valores del sistema solar
+  - asteroid_belt cantidad de asteroides en el cinturon
+  - kuiper_belt cantidad de asteroides en el cinturon de kuiper
+  - asteroids cantidad de asteroides por el sistema solar
 {c["amarillo"]}active_save:{c["default"]} Guarda los datos generados durante la simulación en un archivo .json
 {c["amarillo"]}rings:{c["default"]} agregar y ver datos de los anillos
   
@@ -781,9 +787,9 @@ while sigue:
                 if "lunas" in DCLD and isinstance(DCLD["lunas"], list):
                     for dato in DCLD["lunas"]:
                         # guardar los datos de la posicion 
-                        n_posicion = Vector2(Decimal(dato["posicion"]["x"]), Decimal(dato["posicion"]["y"]))
+                        n_posicion = Vector2(Decimal(dato["posicion relativa"]["x"]), Decimal(dato["posicion relativa"]["y"]))
                         # guardar los datos de la velocidad
-                        n_velocidad = Vector2(Decimal(dato["velocidad"]["x"]), Decimal(dato["velocidad"]["y"]))
+                        n_velocidad = Vector2(Decimal(dato["velocidad relativa"]["x"]), Decimal(dato["velocidad relativa"]["y"]))
                         # guardar datos del planeta
                         planeta = next((cuerpo for cuerpo in todos_los_cuerpos if cuerpo.tag == dato["cuerpo central"] or cuerpo.nombre == dato["cuerpo central"]), None)
                         
@@ -802,11 +808,11 @@ while sigue:
                 if "anillos" in DCLD and isinstance(DCLD["anillos"], list):
                     for dato in DCLD["anillos"]:
                         # guardar los datos de la posicion 
-                        distancia_min = datos["distancia"]["min"]
-                        distancia_max = datos["distancia"]["max"]
+                        distancia_min = dato["distancia"]["min"]
+                        distancia_max = dato["distancia"]["max"]
                         planeta = next((cuerpo for cuerpo in todos_los_cuerpos if cuerpo.tag == dato["planeta"] or cuerpo.nombre == dato["planeta"]), None)
-                        cantidad_de_asteroides = datos["cantidad de cuerpos"]
-                        masa = datos["masa"]
+                        cantidad_de_asteroides = dato["cantidad de cuerpos"]
+                        masa = dato["masa"]
                         
                         # crear el cuerpo usando el nombre, la posicon, la velocidad y la masa que indica el archivo
                         cuerpo_cargado = Anillo(planeta,distancia_min,distancia_max, cantidad_de_asteroides, masa)
@@ -985,7 +991,7 @@ si decea cancelar este comando deje la casilla vacia{c["default"]}""")
                     # iterar los cuerpos
                     for i in todos_los_anillos:
                         # mostrar datos
-                        print(f"{c["amarillo"]}{i.planeta}:{c["default"]} {i}")
+                        print(f"{c["amarillo"]}{i.planeta.nombre}:{c["default"]} {i}")
                 else:
                     # indicar que no hay datos
                     print("todavía no hay ningun anillo")
@@ -1181,16 +1187,16 @@ while True:
         i.constante(delta_time)
     
     for i, cuerpo in enumerate(todos_los_aproximados_m):
-        for j in todos_los_cuerpos:
-            if cuerpo.cuerpo_que_orbita != j:
-                cuerpo.aplicar_gravedad(j, delta_time, False)
+        # for j in todos_los_cuerpos:
+        #     if cuerpo.cuerpo_que_orbita != j:
+        #         cuerpo.aplicar_gravedad(j, delta_time, False)
                 
-        for j in todos_los_aproximados_m[i+1:]:
-            cuerpo.aplicar_gravedad(j, delta_time, True)
+        # for j in todos_los_aproximados_m[i+1:]:
+        #     cuerpo.aplicar_gravedad(j, delta_time, True)
         cuerpo.posicion = fisica.posicion_orbital_completa(cuerpo, tiempo_transcurrido) + cuerpo.cuerpo_que_orbita.posicion
         
             
-        cuerpo.constante(delta_time)
+        # cuerpo.constante(delta_time)
         
     
     # iterar la lista de aproximados
