@@ -2,7 +2,6 @@
 
 ## Funcionalidad del código:
 En este programa puedes hacer simulaciones de gravedad en 2 dimensiones.
-
 ## instrucciones de uso del programa:
 **1. help:** Ver todas las acciones posibles
 
@@ -26,20 +25,22 @@ En este programa puedes hacer simulaciones de gravedad en 2 dimensiones.
   
   - delta_time varia dependiendo de cuanto tarda entre frame y frame (automático)
   - uniform un valor constante cada frame
-
-**9. solar_sistem:** contiene algunos datos especificos del sistema solar:
+**9. size:** valores de tamaños
+  - dots tamaño automático de los cuerpos
+  - view tamaño de visión
+**10. solar_sistem:** contiene algunos datos especificos del sistema solar:
 
   - asteroid_belt cantidad de asteroides en el cinturon
   - kuiper_belt cantidad de asteroides en el cinturon de kuiper
   - asteroids cantidad de asteroides aleatorios
 
-**10. active_save:** Guarda los datos generados durante la simulación en un archivo .json
+**11. active_save:** Guarda los datos generados durante la simulación en un archivo .json
 
 Para asignación de vectores 2 se escribe x;y separando los valores con un punto y coma
 
 ej: 5;8 indica la posición 5 en X, 8 en Y
 
-**11. rings:** Agregar y ver datos de los anillos
+**12. rings:** Agregar y ver datos de los anillos
 
 ## Recomendaciones:
 - Se pueden crear funciones dentro del código gravedad.py que creen muchos cuerpos de forma automática (preferentemente justo después del bucle de personalización del usuario)
